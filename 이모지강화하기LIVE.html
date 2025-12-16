@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>이모지 강화하기 🌍</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Jua', sans-serif;
+            background-color: #1a1a2e;
+            color: #fff;
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+        
+        @keyframes flash {
+            0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); transform: scale(1); }
+            50% { box-shadow: 0 0 50px 20px rgba(255, 255, 255, 0); transform: scale(1.1); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); transform: scale(1); }
+        }
+
+        @keyframes critical-flash {
+            0% { box-shadow: 0 0 0 0 rgba(255, 200, 0, 0.7); transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.2) rotate(-5deg); }
+            50% { box-shadow: 0 0 80px 40px rgba(255, 200, 0, 0.5); transform: scale(1.2) rotate(5deg); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 200, 0, 0); transform: scale(1) rotate(0deg); }
+        }
+
+        @keyframes super-critical-flash {
+            0% { box-shadow: 0 0 0 0 rgba(255, 0, 255, 0.7); transform: scale(1); filter: hue-rotate(0deg); }
+            50% { box-shadow: 0 0 100px 60px rgba(255, 0, 255, 0.5); transform: scale(1.3); filter: hue-rotate(180deg); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 0, 255, 0); transform: scale(1); filter: hue-rotate(360deg); }
+        }
+
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-50px) scale(1.5); }
+        }
+
+        .animate-flash { animation: flash 0.3s ease-out; }
+        .animate-critical { animation: critical-flash 0.5s ease-out; }
+        .animate-super-critical { animation: super-critical-flash 0.8s ease-out; }
+        .animate-shake { animation: shake 0.5s; }
+
+        .emoji-display { transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        
+        .modal-bg { background-color: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px); }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+        }
+
+        .floating-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            font-weight: bold;
+            text-shadow: 2px 2px 0 #000;
+            z-index: 50;
+            animation: floatUp 1s forwards;
+            white-space: nowrap;
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Loading Overlay -->
+    <div id="serverLoading" class="fixed inset-0 z-[60] bg-black/80 flex flex-col items-center justify-center text-center p-4">
+        <div class="loader mb-4 mx-auto" style="width: 40px; height: 40px;"></div>
+        <p class="text-yellow-400">시스템 연결 중...</p>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="startScreen" class="w-full max-w-md text-center space-y-6 hidden">
+        <h1 class="text-5xl text-yellow-400 drop-shadow-lg mb-2">이모지 강화하기</h1>
+        <div id="connectionStatus" class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-gray-700 text-gray-400 mb-2">
+            ⚪ 오프라인 모드
+        </div>
+        <p class="text-gray-400 text-lg">0단계 먼지부터 50단계 우주까지!</p>
+        
+        <div class="glass-panel p-6 space-y-4">
+            <div class="text-6xl animate-bounce">⚒️</div>
+            <p class="text-sm text-gray-300">
+                <span class="text-red-400 font-bold">New!</span> 운이 좋으면 2~3단계 점프!<br>
+                <span id="modeDesc">로컬에 기록이 저장됩니다.</span>
+            </p>
+            <input type="text" id="playerNameInput" placeholder="닉네임 (최대 8글자)" maxlength="8" 
+                class="w-full p-3 rounded-lg bg-gray-800 border border-gray-600 text-center text-xl focus:outline-none focus:border-yellow-500 transition-colors">
+            <button onclick="window.startGame()" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 py-4 rounded-xl text-2xl font-bold shadow-lg hover:scale-105 transition-transform active:scale-95">
+                도전 시작!
+            </button>
+        </div>
+
+        <div class="glass-panel p-4 relative">
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="text-xl text-yellow-300">🏆 명예의 전당 Top 10</h3>
+                <div class="flex items-center gap-1 text-xs text-gray-400">
+                    <div id="statusDot" class="w-2 h-2 rounded-full bg-gray-500"></div> <span id="statusText">로컬</span>
+                </div>
+            </div>
+            <div id="startLeaderboardList" class="space-y-2 text-sm min-h-[100px]">
+                <div class="text-gray-500 py-4">데이터 불러오는 중...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen" class="hidden w-full max-w-md flex flex-col items-center relative">
+        <div class="w-full flex justify-between items-center mb-6 glass-panel p-3 px-5">
+            <div class="text-gray-400">플레이어: <span id="displayPlayerName" class="text-white font-bold"></span></div>
+            <div class="text-gray-400">현재 확률: <span id="currentChance" class="text-green-400 font-bold">99%</span></div>
+        </div>
+
+        <div id="cardArea" class="w-full bg-gradient-to-b from-gray-800 to-gray-900 rounded-3xl p-8 shadow-2xl border-4 border-gray-700 text-center relative overflow-hidden mb-6">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gray-700">
+                <div id="progressBar" class="h-full bg-yellow-500 transition-all duration-500" style="width: 0%"></div>
+            </div>
+            
+            <div class="mt-4 mb-2 text-gray-400 font-bold tracking-widest text-sm">LEVEL <span id="levelDisplay" class="text-2xl text-white">0</span></div>
+            
+            <div id="emojiDisplay" class="emoji-display text-[120px] leading-tight my-4 drop-shadow-2xl select-none">
+                ☁️
+            </div>
+            
+            <div id="nameDisplay" class="text-3xl font-bold text-white mb-2 drop-shadow-md">먼지</div>
+            <div id="descDisplay" class="text-sm text-gray-500">아무런 가치가 없습니다.</div>
+        </div>
+
+        <div class="w-full grid grid-cols-2 gap-4">
+            <button onclick="window.stopGame()" class="bg-gray-700 hover:bg-gray-600 text-gray-200 py-4 rounded-2xl font-bold text-xl shadow-lg transform transition active:scale-95 border-b-4 border-gray-900">
+                ✋ 멈추기<br><span class="text-xs font-normal text-gray-400">기록 저장</span>
+            </button>
+            <button id="upgradeBtn" onclick="window.attemptUpgrade()" class="bg-gradient-to-b from-red-500 to-red-700 hover:from-red-400 hover:to-red-600 text-white py-4 rounded-2xl font-bold text-xl shadow-lg transform transition active:scale-95 border-b-4 border-red-900 relative overflow-hidden">
+                <span class="relative z-10">🔨 강화하기</span>
+            </button>
+        </div>
+
+        <div id="gameLog" class="w-full mt-6 h-32 overflow-y-auto text-sm text-gray-400 space-y-1 p-2 scrollbar-hide text-center font-sans opacity-70">
+            <div class="italic">게임이 시작되었습니다.</div>
+        </div>
+    </div>
+
+    <!-- Result Modal -->
+    <div id="resultModal" class="hidden fixed inset-0 modal-bg flex items-center justify-center z-50 p-4">
+        <div class="bg-gray-800 border-2 border-gray-600 w-full max-w-sm rounded-2xl p-6 text-center shadow-2xl transform scale-100 transition-transform">
+            <div id="resultIcon" class="text-6xl mb-4">💥</div>
+            <h2 id="resultTitle" class="text-3xl font-bold mb-2">강화 실패!</h2>
+            <p id="resultDesc" class="text-gray-300 mb-6">아쉽게도 아이템이 파괴되었습니다.</p>
+            
+            <div class="bg-gray-900 rounded-lg p-4 mb-6">
+                <div class="flex justify-between text-sm text-gray-400 mb-1">
+                    <span>최종 레벨</span>
+                    <span>기록 저장</span>
+                </div>
+                <div class="flex justify-between items-end">
+                    <span id="resultLevel" class="text-2xl text-yellow-400 font-bold">Lv. 12</span>
+                    <span id="resultSaved" class="text-red-400 font-bold">실패 (저장 안됨)</span>
+                </div>
+            </div>
+
+            <button onclick="window.resetGame()" class="w-full bg-white text-gray-900 py-3 rounded-xl font-bold text-lg hover:bg-gray-200 transition">
+                다시 도전하기
+            </button>
+        </div>
+    </div>
+
+    <!-- Leaderboard Modal (In Game) -->
+    <div id="leaderboardSection" class="hidden w-full max-w-md mt-10">
+        <div class="glass-panel p-5">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-yellow-400">🏆 명예의 전당</h2>
+                <span id="ingameStatus" class="text-xs text-gray-400">● Local</span>
+            </div>
+            <div id="leaderboardList" class="space-y-3"></div>
+        </div>
+    </div>
+
+    <!-- Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- System State ---
+        let isOnline = false;
+        let db = null;
+        let auth = null;
+        let currentUser = null;
+        const LOCAL_STORAGE_KEY = 'emoji_upgrade_local_v2';
+        const APP_ID = 'default-app-id'; // Fallback
+
+        // --- Init Function ---
+        async function initSystem() {
+            try {
+                // Check if we are in the Preview Environment (variables exist)
+                if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                    const firebaseConfig = JSON.parse(__firebase_config);
+                    const app = initializeApp(firebaseConfig);
+                    auth = getAuth(app);
+                    db = getFirestore(app);
+                    
+                    // Auth Flow
+                    let authSuccess = false;
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        try {
+                            await signInWithCustomToken(auth, __initial_auth_token);
+                            authSuccess = true;
+                        } catch(e) { console.warn("Custom token failed", e); }
+                    }
+
+                    if (!authSuccess) {
+                        await signInAnonymously(auth);
+                    }
+                    
+                    currentUser = auth.currentUser;
+                    isOnline = true;
+                    console.log("Online Mode Activated");
+                    
+                    // Start Listener
+                    listenToLeaderboard();
+                } else {
+                    throw new Error("Local Environment Detected");
+                }
+            } catch (error) {
+                console.log("Switching to Offline Mode:", error.message);
+                isOnline = false;
+                // Offline Listener (Local Storage)
+                renderLocalLeaderboard();
+            }
+
+            // Update UI for Mode
+            updateModeUI();
+            
+            // Hide Loader & Show Screen
+            document.getElementById('serverLoading').classList.add('hidden');
+            document.getElementById('startScreen').classList.remove('hidden');
+        }
+
+        function updateModeUI() {
+            const statusBadge = document.getElementById('connectionStatus');
+            const modeDesc = document.getElementById('modeDesc');
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            const ingameStatus = document.getElementById('ingameStatus');
+
+            if (isOnline) {
+                statusBadge.innerHTML = '🟢 온라인 모드';
+                statusBadge.className = 'inline-block px-3 py-1 rounded-full text-xs font-bold bg-green-900 text-green-400 mb-2';
+                modeDesc.innerText = "모든 플레이어와 랭킹을 공유합니다.";
+                statusDot.className = "w-2 h-2 rounded-full bg-green-500 animate-pulse";
+                statusText.innerText = "실시간";
+                statusText.className = "text-green-400";
+                ingameStatus.innerText = "● Live Global";
+                ingameStatus.className = "text-xs text-green-400";
+            } else {
+                statusBadge.innerHTML = '⚪ 오프라인 모드';
+                statusBadge.className = 'inline-block px-3 py-1 rounded-full text-xs font-bold bg-gray-700 text-gray-300 mb-2';
+                modeDesc.innerText = "기록이 내 컴퓨터에만 저장됩니다.";
+                statusDot.className = "w-2 h-2 rounded-full bg-gray-500";
+                statusText.innerText = "로컬";
+                statusText.className = "text-gray-400";
+                ingameStatus.innerText = "● Local Only";
+                ingameStatus.className = "text-xs text-gray-400";
+            }
+        }
+
+        // --- Leaderboard Logic (Hybrid) ---
+        function listenToLeaderboard() {
+            if (!isOnline) {
+                renderLocalLeaderboard();
+                return;
+            }
+
+            const appId = typeof __app_id !== 'undefined' ? __app_id : APP_ID;
+            const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'emoji_rankings_v2');
+            
+            onSnapshot(colRef, (snapshot) => {
+                const rankings = [];
+                snapshot.forEach(doc => rankings.push(doc.data()));
+                rankings.sort((a, b) => b.level - a.level);
+                renderLeaderboardUI(rankings);
+            }, (error) => {
+                console.error("Fetch Error, fallback to local", error);
+                isOnline = false;
+                updateModeUI();
+                renderLocalLeaderboard();
+            });
+        }
+
+        function renderLocalLeaderboard() {
+            const localData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '[]');
+            localData.sort((a, b) => b.level - a.level);
+            renderLeaderboardUI(localData);
+        }
+
+        function renderLeaderboardUI(rankings) {
+            [document.getElementById('startLeaderboardList'), document.getElementById('leaderboardList')].forEach(container => {
+                if (!container) return;
+                container.innerHTML = "";
+                
+                const displayList = rankings.slice(0, 10);
+                if (displayList.length === 0) {
+                    container.innerHTML = '<div class="text-center text-gray-500 py-2">아직 기록이 없습니다.</div>';
+                    return;
+                }
+
+                displayList.forEach((rank, index) => {
+                    const isTop = index < 3;
+                    const rowClass = isTop ? 'bg-gray-700/50 border-yellow-500/30' : 'bg-gray-800/30 border-gray-700';
+                    const rankBadge = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}위`;
+                    const isMe = rank.name === playerName;
+                    const nameClass = isMe ? "text-yellow-300 font-bold" : "text-white font-bold";
+                    
+                    container.innerHTML += `
+                        <div class="flex items-center justify-between p-2 rounded-lg border ${rowClass}">
+                            <div class="flex items-center gap-3">
+                                <span class="font-bold w-8 text-center text-yellow-500">${rankBadge}</span>
+                                <div class="flex flex-col">
+                                    <span class="${nameClass}">${rank.name}</span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xl">${rank.emoji}</div>
+                                <div class="text-xs text-yellow-300 font-bold">Lv.${rank.level} ${rank.item}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        async function saveScore(level, name, item, emoji) {
+            const data = {
+                name, level, item, emoji,
+                timestamp: Date.now()
+            };
+
+            if (isOnline && currentUser) {
+                try {
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : APP_ID;
+                    const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'emoji_rankings_v2');
+                    await addDoc(colRef, { ...data, uid: currentUser.uid });
+                    return true;
+                } catch (e) {
+                    console.error("Online save failed, trying local", e);
+                }
+            }
+
+            // Local Save Fallback
+            const localData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '[]');
+            localData.push(data);
+            localData.sort((a, b) => b.level - a.level);
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(localData.slice(0, 50))); // Keep top 50 locally
+            
+            // Re-render immediately if offline
+            if (!isOnline) renderLocalLeaderboard();
+            
+            return true;
+        }
+
+        // --- Game Data & Logic ---
+        const GAME_DATA = [
+            { lv: 0, name: "먼지", emoji: "🌫️", prob: 99, desc: "후~ 불면 날아갑니다." },
+            { lv: 1, name: "돌맹이", emoji: "🪨", prob: 98, desc: "길가에 흔한 돌입니다." },
+            { lv: 2, name: "조약돌", emoji: "🌑", prob: 97, desc: "조금 매끄러워졌습니다." },
+            { lv: 3, name: "벽돌", emoji: "🧱", prob: 96, desc: "건축 자재로 쓸 수 있습니다." },
+            { lv: 4, name: "동전", emoji: "🪙", prob: 95, desc: "짤랑짤랑 소리가 납니다." },
+            { lv: 5, name: "녹슨 단검", emoji: "🗡️", prob: 94, desc: "파상풍을 조심하세요." },
+            { lv: 6, name: "망치", emoji: "🔨", prob: 92, desc: "못을 박을 수 있습니다." },
+            { lv: 7, name: "도끼", emoji: "🪓", prob: 90, desc: "나무를 할 수 있습니다." },
+            { lv: 8, name: "철검", emoji: "⚔️", prob: 85, desc: "기본적인 무기입니다." },
+            { lv: 9, name: "방패", emoji: "🛡️", prob: 80, desc: "공격을 막아냅니다." }, 
+            { lv: 10, name: "은수저", emoji: "🥄", prob: 75, desc: "운이 조금 필요합니다." },
+            { lv: 11, name: "금반지", emoji: "💍", prob: 70, desc: "반짝이기 시작합니다." },
+            { lv: 12, name: "루비", emoji: "🔴", prob: 65, desc: "붉은 빛이 영롱합니다." },
+            { lv: 13, name: "사파이어", emoji: "🔵", prob: 60, desc: "푸른 바다의 색입니다." },
+            { lv: 14, name: "에메랄드", emoji: "🟢", prob: 55, desc: "숲의 기운이 느껴집니다." },
+            { lv: 15, name: "다이아몬드", emoji: "💎", prob: 50, desc: "가장 단단한 보석입니다." }, 
+            { lv: 16, name: "보물상자", emoji: "⚱️", prob: 45, desc: "무엇이 들었을까요?" },
+            { lv: 17, name: "왕관", emoji: "👑", prob: 40, desc: "권력의 상징입니다." },
+            { lv: 18, name: "마법봉", emoji: "🪄", prob: 35, desc: "신비한 힘이 깃들었습니다." },
+            { lv: 19, name: "유령", emoji: "👻", prob: 30, desc: "이승을 떠돌고 있습니다." },
+            { lv: 20, name: "도깨비불", emoji: "🔥", prob: 25, desc: "뜨겁지 않은 불꽃입니다." },
+            { lv: 21, name: "유니콘", emoji: "🦄", prob: 20, desc: "전설 속의 동물입니다." },
+            { lv: 22, name: "용", emoji: "🐉", prob: 18, desc: "하늘을 날 수 있습니다." },
+            { lv: 23, name: "불사조", emoji: "🦅", prob: 16, desc: "죽지 않는 새입니다." },
+            { lv: 24, name: "천사", emoji: "👼", prob: 14, desc: "성스러운 존재입니다." },
+            { lv: 25, name: "악마", emoji: "😈", prob: 12, desc: "유혹을 조심하세요." },
+            { lv: 26, name: "외계인", emoji: "👽", prob: 11, desc: "우주에서 왔습니다." },
+            { lv: 27, name: "UFO", emoji: "🛸", prob: 10, desc: "미확인 비행 물체입니다." },
+            { lv: 28, name: "인공위성", emoji: "🛰️", prob: 9, desc: "지구를 감시합니다." },
+            { lv: 29, name: "로켓", emoji: "🚀", prob: 8, desc: "대기권을 돌파합니다." }, 
+            { lv: 30, name: "달", emoji: "🌙", prob: 7, desc: "토끼가 살고 있습니다." },
+            { lv: 31, name: "지구", emoji: "🌍", prob: 6, desc: "우리의 고향입니다." },
+            { lv: 32, name: "태양", emoji: "☀️", prob: 5, desc: "모든 생명의 근원입니다." },
+            { lv: 33, name: "혜성", emoji: "☄️", prob: 4, desc: "꼬리가 아름답습니다." },
+            { lv: 34, name: "토성", emoji: "🪐", prob: 3, desc: "아름다운 고리를 가졌습니다." },
+            { lv: 35, name: "은하수", emoji: "🌌", prob: 2.5, desc: "별들의 강입니다." },
+            { lv: 36, name: "블랙홀", emoji: "⚫", prob: 2.0, desc: "빛조차 빠져나갈 수 없습니다." },
+            { lv: 37, name: "초신성", emoji: "💥", prob: 1.8, desc: "별의 마지막 폭발입니다." },
+            { lv: 38, name: "성운", emoji: "🌫️", prob: 1.6, desc: "별들이 태어나는 곳입니다." },
+            { lv: 39, name: "퀘이사", emoji: "✨", prob: 1.4, desc: "우주에서 가장 밝은 천체입니다." },
+            { lv: 40, name: "차원의 문", emoji: "🚪", prob: 1.2, desc: "어디로 연결될지 모릅니다." },
+            { lv: 41, name: "시간", emoji: "⏳", prob: 1.0, desc: "누구도 거스를 수 없습니다." },
+            { lv: 42, name: "공간", emoji: "💠", prob: 0.8, desc: "무한히 펼쳐져 있습니다." },
+            { lv: 43, name: "빛", emoji: "💡", prob: 0.6, desc: "가장 빠른 존재입니다." },
+            { lv: 44, name: "어둠", emoji: "🌑", prob: 0.5, desc: "빛이 없는 곳입니다." },
+            { lv: 45, name: "혼돈", emoji: "🌀", prob: 0.4, desc: "질서가 무너진 상태입니다." },
+            { lv: 46, name: "질서", emoji: "⚖️", prob: 0.3, desc: "모든 것이 제자리에 있습니다." },
+            { lv: 47, name: "생명", emoji: "🧬", prob: 0.2, desc: "기적 그 자체입니다." },
+            { lv: 48, name: "죽음", emoji: "💀", prob: 0.1, desc: "피할 수 없는 운명입니다." },
+            { lv: 49, name: "신", emoji: "🛐", prob: 0.05, desc: "전지전능한 존재입니다." },
+            { lv: 50, name: "우주의 섭리", emoji: "⚛️", prob: 0, desc: "존재하는 모든 것의 이유." }
+        ];
+
+        let currentLevel = 0;
+        let playerName = "";
+        let isProcessing = false;
+
+        const els = {
+            startScreen: document.getElementById('startScreen'),
+            gameScreen: document.getElementById('gameScreen'),
+            nameInput: document.getElementById('playerNameInput'),
+            displayName: document.getElementById('displayPlayerName'),
+            currentChance: document.getElementById('currentChance'),
+            cardArea: document.getElementById('cardArea'),
+            levelDisplay: document.getElementById('levelDisplay'),
+            emojiDisplay: document.getElementById('emojiDisplay'),
+            nameDisplay: document.getElementById('nameDisplay'),
+            descDisplay: document.getElementById('descDisplay'),
+            progressBar: document.getElementById('progressBar'),
+            gameLog: document.getElementById('gameLog'),
+            resultModal: document.getElementById('resultModal'),
+            resultIcon: document.getElementById('resultIcon'),
+            resultTitle: document.getElementById('resultTitle'),
+            resultDesc: document.getElementById('resultDesc'),
+            resultLevel: document.getElementById('resultLevel'),
+            resultSaved: document.getElementById('resultSaved'),
+            leaderboardSection: document.getElementById('leaderboardSection'),
+            leaderboardList: document.getElementById('leaderboardList'),
+            startLeaderboardList: document.getElementById('startLeaderboardList')
+        };
+        
+        window.startGame = function() {
+            const name = els.nameInput.value.trim();
+            if (!name) {
+                alert("이름을 입력해주세요!");
+                return;
+            }
+            playerName = name;
+            currentLevel = 0;
+            isProcessing = false;
+            
+            updateUI();
+            addLog("게임을 시작합니다. 행운을 빕니다!");
+            
+            els.startScreen.classList.add('hidden');
+            els.gameScreen.classList.remove('hidden');
+            els.leaderboardSection.classList.remove('hidden');
+        };
+
+        window.attemptUpgrade = function() {
+            if (isProcessing) return;
+            if (currentLevel >= 50) return;
+
+            isProcessing = true;
+            const currentData = GAME_DATA[currentLevel];
+            const prob = currentData.prob;
+
+            const btn = document.getElementById('upgradeBtn');
+            btn.classList.add('scale-95', 'brightness-75');
+            addLog(`강화 시도 중... (확률: ${prob}%)`);
+
+            setTimeout(() => {
+                btn.classList.remove('scale-95', 'brightness-75');
+                const roll = Math.random() * 100;
+                
+                if (roll < prob) {
+                    if (roll < (prob / 4)) success(3);
+                    else if (roll < (prob / 2)) success(2);
+                    else success(1);
+                } else {
+                    fail();
+                }
+                isProcessing = false;
+            }, 600);
+        };
+
+        function success(increment) {
+            const prevLevel = currentLevel;
+            currentLevel = Math.min(currentLevel + increment, 50);
+            const actualIncrement = currentLevel - prevLevel;
+            const data = GAME_DATA[currentLevel];
+            
+            if (increment === 3 && actualIncrement >= 3) {
+                addLog(`⚡ 초대박 크리티컬!!! +3단계 상승!`);
+                showFloatingText("⚡ 초대박 +3 ⚡", "#d946ef");
+                triggerEffect('animate-super-critical');
+                fireConfetti(true);
+            } else if (increment === 2 && actualIncrement >= 2) {
+                addLog(`🔥 크리티컬! +2단계 상승!`);
+                showFloatingText("🔥 크리티컬 +2 🔥", "#fbbf24");
+                triggerEffect('animate-critical');
+                fireConfetti(false);
+            } else {
+                addLog(`✅ 강화 성공! ${data.name}(으)로 진화!`);
+                triggerEffect('animate-flash');
+            }
+            
+            if (increment === 1 && (currentLevel % 5 === 0 || currentLevel > 30)) {
+                fireConfetti(false);
+            }
+
+            updateUI();
+            if (currentLevel === 50) window.stopGame(true);
+        }
+
+        function fail() {
+            addLog(`💥 강화 실패... 아이템이 파괴되었습니다.`);
+            showFloatingText("파괴됨...", "#ef4444");
+            triggerEffect('animate-shake');
+            showResult(false);
+        }
+
+        function showFloatingText(text, color) {
+            const el = document.createElement('div');
+            el.className = 'floating-text text-4xl drop-shadow-lg';
+            el.innerText = text;
+            el.style.color = color;
+            els.cardArea.appendChild(el);
+            setTimeout(() => el.remove(), 1000);
+        }
+
+        function triggerEffect(animClass) {
+            els.cardArea.classList.remove('animate-flash', 'animate-critical', 'animate-super-critical', 'animate-shake');
+            void els.cardArea.offsetWidth;
+            els.cardArea.classList.add(animClass);
+        }
+
+        window.stopGame = function(isClear = false) {
+            if (isProcessing && !isClear) return;
+            if (currentLevel === 0 && !isClear) {
+                alert("0단계에서는 멈출 수 없습니다.");
+                return;
+            }
+
+            saveScore(currentLevel, playerName, GAME_DATA[currentLevel].name, GAME_DATA[currentLevel].emoji)
+                .then(() => showResult(true, isClear));
+        };
+
+        function showResult(isSaved, isClear = false) {
+            els.resultModal.classList.remove('hidden');
+            if (isSaved) {
+                els.resultIcon.innerText = isClear ? "🎉" : "🛑";
+                els.resultTitle.innerText = isClear ? "게임 클리어!" : "강화 중단";
+                els.resultDesc.innerText = isClear ? "전설적인 업적을 달성했습니다!" : "안전하게 아이템을 챙겼습니다.";
+                els.resultLevel.innerText = `Lv. ${currentLevel}`;
+                els.resultLevel.className = "text-2xl text-green-400 font-bold";
+                els.resultSaved.innerText = isOnline ? "서버 저장 완료" : "로컬 저장 완료";
+                els.resultSaved.className = "text-green-400 font-bold";
+                if (isClear) fireConfetti(true);
+            } else {
+                els.resultIcon.innerText = "💥";
+                els.resultTitle.innerText = "강화 실패";
+                els.resultDesc.innerText = "욕심이 과했습니다.";
+                els.resultLevel.innerText = `(도달) Lv. ${currentLevel}`;
+                els.resultLevel.className = "text-2xl text-gray-500 font-bold";
+                els.resultSaved.innerText = "저장 불가";
+                els.resultSaved.className = "text-red-400 font-bold";
+            }
+        }
+
+        window.resetGame = function() {
+            els.resultModal.classList.add('hidden');
+            els.gameScreen.classList.add('hidden');
+            els.leaderboardSection.classList.add('hidden');
+            els.startScreen.classList.remove('hidden');
+            els.nameInput.value = "";
+            els.gameLog.innerHTML = '<div class="italic">게임이 시작되었습니다.</div>';
+        };
+
+        function updateUI() {
+            const data = GAME_DATA[currentLevel];
+            els.displayName.innerText = playerName;
+            els.levelDisplay.innerText = currentLevel;
+            els.emojiDisplay.innerText = data.emoji;
+            els.nameDisplay.innerText = data.name;
+            els.descDisplay.innerText = data.desc;
+            
+            if (currentLevel < 50) {
+                els.currentChance.innerText = `${GAME_DATA[currentLevel].prob}%`;
+                els.currentChance.className = getProbColor(GAME_DATA[currentLevel].prob);
+            } else {
+                els.currentChance.innerText = "-";
+            }
+            const progress = (currentLevel / 50) * 100;
+            els.progressBar.style.width = `${progress}%`;
+        }
+
+        function addLog(msg) {
+            const div = document.createElement('div');
+            div.innerText = msg;
+            els.gameLog.prepend(div);
+        }
+
+        function getProbColor(prob) {
+            if (prob >= 80) return "text-green-400 font-bold";
+            if (prob >= 50) return "text-yellow-400 font-bold";
+            if (prob >= 20) return "text-orange-500 font-bold";
+            return "text-red-600 font-bold animate-pulse";
+        }
+
+        function fireConfetti(isMassive = false) {
+            if (isMassive) {
+                const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 999 };
+                const random = (min, max) => Math.random() * (max - min) + min;
+                confetti({ ...defaults, particleCount: 50, origin: { x: random(0.1, 0.3), y: Math.random() - 0.2 } });
+                confetti({ ...defaults, particleCount: 50, origin: { x: random(0.7, 0.9), y: Math.random() - 0.2 } });
+            } else {
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            }
+        }
+
+        // Start Init
+        initSystem();
+    </script>
+</body>
+</html>
