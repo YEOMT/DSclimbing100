@@ -1,0 +1,1833 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>대송 등반: 100교시의 전설 v2.1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide-react/dist/lucide-react.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #000;
+            color: white;
+            overflow: hidden;
+            user-select: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+       #game-container {
+            position: relative;
+            overflow: hidden;
+            background-color: #0f172a;
+            
+            /* [기본: 데스크탑] 16:9 비율 유지 & 중앙 정렬 */
+            width: 100%;
+            height: 100%;
+            max-width: 1280px;
+            max-height: 720px;
+            aspect-ratio: 16 / 9;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            border: 2px solid #334155;
+            border-radius: 12px;
+        }
+
+        /* [최적화] 태블릿 & 모바일 (화면 폭 1024px 이하) */
+        @media (max-width: 1024px) {
+            #game-container {
+                width: 100vw;       /* 가로 꽉 채움 */
+                height: 100dvh;     /* 세로 꽉 채움 (주소창 제외한 실제 높이) */
+                max-width: none;    /* 제한 해제 */
+                max-height: none;   /* 제한 해제 */
+                aspect-ratio: auto; /* 비율 고정 해제 (기기 비율 따라감) */
+                border: none;
+                border-radius: 0;
+            }
+            /* 모바일에서 스크롤바 숨기기 */
+            ::-webkit-scrollbar { display: none; }
+        }
+
+        @keyframes shake-hard {
+            0% { transform: translate(0px, 0px) rotate(0deg); }
+            10% { transform: translate(-4px, -4px) rotate(-2deg); }
+            20% { transform: translate(4px, 4px) rotate(2deg); }
+            30% { transform: translate(-6px, 2px) rotate(-4deg); }
+            40% { transform: translate(6px, -2px) rotate(4deg); }
+            50% { transform: translate(-4px, -4px) rotate(-2deg); }
+            60% { transform: translate(4px, 4px) rotate(2deg); }
+            70% { transform: translate(-2px, 2px) rotate(-1deg); }
+            80% { transform: translate(2px, -2px) rotate(1deg); }
+            90% { transform: translate(-1px, 1px) rotate(0deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+        .hit-effect { animation: shake-hard 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        .card-exhaust { opacity: 0.7; border-style: dashed; }
+        @keyframes fade-in { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
+        
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        .rank-table th { background-color: #1e293b; color: #94a3b8; padding: 12px; }
+        .rank-table td { border-bottom: 1px solid #334155; padding: 12px; }
+        .rank-table tr:hover { background-color: #334155; }
+/* 타격감 효과 (v1.5 추가) */
+        @keyframes float-up { 0% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -150%) scale(1.2); } }
+        @keyframes boom { 0% { transform: translate(-50%, -50%) scale(0.5); } 50% { transform: translate(-50%, -50%) scale(1.5); } 100% { opacity: 0; transform: translate(-50%, -150%) scale(1); } }
+        @keyframes pulse-red { 0%, 100% { box-shadow: inset 0 0 0 0 transparent; } 50% { box-shadow: inset 0 0 50px 20px rgba(239, 68, 68, 0.7); background-color: rgba(239, 68, 68, 0.3); } }
+        
+        .dmg-num { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 100; font-weight: 900; text-shadow: 2px 2px 0 #000, -1px -1px 0 #000; white-space: nowrap; }
+        .dmg-normal { font-size: 2.5rem; color: white; animation: float-up 0.8s ease-out forwards; }
+        .dmg-crit { font-size: 3.5rem; color: #facc15; animation: float-up 0.8s ease-out forwards; } /* 25 이상 */
+        .dmg-super { font-size: 5rem; color: #ef4444; animation: boom 0.8s ease-out forwards; } /* 45 이상 */
+        .flash-red { animation: pulse-red 0.5s ease-in-out; }
+    </style>
+</head>
+<body>
+    <div id="root" class="w-full h-full flex items-center justify-center"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // [1. Firebase 연결 설정]
+        const firebaseConfig = {
+            apiKey: "복사한_API_KEY_붙여넣기",       // <--- 아까 메모장에 복사한 내용으로
+            authDomain: "프로젝트ID.firebaseapp.com", // <--- 괄호 안의 내용들을
+            projectId: "프로젝트ID",                 // <--- 덮어쓰시면 됩니다.
+            storageBucket: "...",
+            messagingSenderId: "...",
+            appId: "..."
+        };
+
+        // [2. 서버 시동 걸기]
+        let db;
+        try {
+            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+        } catch (e) { console.error("서버 연결 실패:", e); }
+
+       // BGM IDs applied from user request (보스별 BGM 분리됨)
+        const BGM_IDS = {
+            MENU: "https://www.dropbox.com/scl/fi/r4hdysk5ijx2ss2u5gfvn/_MainMenu.mp3?rlkey=1raauvmuk3wsbhsq88yl0ghwd&st=rti2rjmt&dl=1", 
+            NORMAL_1: "https://www.dropbox.com/scl/fi/czw39hbkhjqe5r9lq1k86/Normal-Classes1.mp3?rlkey=727a9wx08aeirkbyvjqdb5xc3&st=tz87scsh&dl=1", 
+            NORMAL_2: "https://www.dropbox.com/scl/fi/2zb7lydxs7l9pgasxr1o4/Normal-Classes2.mp3?rlkey=fwfkrxdg5xcu6urgivzba13bn&st=dj0bbzht&dl=1", 
+            SHOP: "https://www.dropbox.com/scl/fi/ryqyshlgzxbg9rydstvrc/_Shopping.mp3?rlkey=1appq53idoyy2pa0hnnrqtwry&st=zjm8dzh7&dl=1", 
+            
+            // [수정] 보스 스테이지 BGM 개별 분리 (링크를 원하는 곡으로 수정하세요)
+            BOSS_20: "https://www.dropbox.com/scl/fi/4wx7wvdmz5e7wh54xqdbl/2040BOSS.mp3?rlkey=x03pwevolgcbjd0o1x6ibu4wb&st=1ha10ep7&dl=1",
+            BOSS_40: "https://www.dropbox.com/scl/fi/4wx7wvdmz5e7wh54xqdbl/2040BOSS.mp3?rlkey=x03pwevolgcbjd0o1x6ibu4wb&st=1ha10ep7&dl=1",
+            BOSS_60: "https://www.dropbox.com/scl/fi/ul8fhavfxxt3uabvwush3/60BOSS.mp3?rlkey=nrw2yv65pba3he8mqm3pheyqa&st=kltwivgd&dl=1",
+            
+            BOSS_80: "https://www.dropbox.com/scl/fi/npeg3by2fmzikaybv97hw/80BOSS.mp3?rlkey=5d0fjojdtzowy8fahsqdgrpl4&st=481ir60o&dl=1",
+            
+            BOSS_98: "https://www.dropbox.com/scl/fi/5gbzg71s8dot9ajoglhdp/98BOSS.mp3?rlkey=nbdacolvi92v8vlkqyqq5yecn&st=73buw3pv&dl=1",
+            BOSS_99: "https://www.dropbox.com/scl/fi/1zy8inzfj0li6y557j1x8/99BOSS.mp3?rlkey=yepnv219mqfoveo89t9cpcgqo&st=pfh3nkd5&dl=1",
+            
+            BOSS_FINAL: "https://www.dropbox.com/scl/fi/g349n4jwmnj5yzonktj37/100BOSS.mp3?rlkey=wm0y9sey9ma021a4hbjuo7t6c&st=ul63fbih&dl=1",
+            
+            VICTORY: "https://www.dropbox.com/scl/fi/5vi1f2v132e3qug3mp4z1/_Legendary-Student.mp3?rlkey=p8vw6ven0w3q9qix56h6hhbve&st=0fv2an24&dl=1",
+            GAMEOVER: "https://www.dropbox.com/scl/fi/fzo7az101gid4q4q4amn8/_GameOver.mp3?rlkey=2oxxb9945jfk85k2dlhqbez62&st=gmneth32&dl=1" 
+        };
+
+        // --- 8-bit Retro Sound Generator (No external files needed) ---
+        const playRetroSound = (type) => {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                if (type === 'hit') {
+                    // Noise burst for hit
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.5, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.1);
+                } else if (type === 'heal') {
+                    // Rising chime
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, ctx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(800, ctx.currentTime + 0.2);
+                    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.2);
+                } else if (type === 'click') {
+                    // Short blip
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(800, ctx.currentTime);
+                    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.05);
+                }
+            } catch (e) {
+                console.error("Audio error", e);
+            }
+        };
+
+      const Icon = ({ name, size = 24, className, ...props }) => {
+            const icons = {
+                Heart: <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>,
+                Brain: <g><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></g>,
+                Shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>,
+                Coins: <g><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m7.1 10.28 1.4.6"/></g>,
+                ShoppingCart: <g><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></g>,
+                Zap: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>,
+                Skull: <g><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M8 20v2h8v-2"/><path d="m12.5 17-.5-1-.5 1h1z"/><path d="M16 20a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20"/></g>,
+                ArrowUp: <g><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></g>,
+                Trash2: <g><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></g>,
+                CheckCircle: <g><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></g>,
+                Wind: <g><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></g>,
+                ArrowRight: <g><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></g>,
+                Volume2: <g><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></g>,
+                VolumeX: <g><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></g>,
+                // [수정됨] 아래 Trophy 부분에 <g> 태그를 추가하여 오류 해결
+                Trophy: <g><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></g>
+            };
+            return (
+                <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
+                    {icons[name] || <circle cx="12" cy="12" r="10" />}
+                </svg>
+            );
+        };
+
+        const SUBJECTS = {
+            BASIC: { id: 'BASIC', name: '일반', emoji: '🎒', teacher: '담임', teacherEmoji: '🧑‍🏫', desc: '기본적인 학교 생활입니다.' },
+            KOREAN: { id: 'KOREAN', name: '국어', emoji: '📜', teacher: '이소정', teacherEmoji: '👩‍🏫', desc: '드로우와 공격이 균형 잡힌 과목입니다.' },
+            MATH: { id: 'MATH', name: '수학', emoji: '📐', teacher: '안나현', teacherEmoji: '👨‍🏫', desc: '계산과 콤보로 폭발적인 피해를 줍니다.' },
+            ENGLISH: { id: 'ENGLISH', name: '영어', emoji: '🅰️', teacher: '염정현', teacherEmoji: '👱‍♂️', desc: '기절, 회피 등 다양한 유틸리티를 제공합니다.' },
+            SCIENCE: { id: 'SCIENCE', name: '과학', emoji: '🧪', teacher: '강경환', teacherEmoji: '🧑‍🔬', desc: '자신의 체력을 대가로 강력한 위력을 냅니다.' },
+            HISTORY: { id: 'HISTORY', name: '역사', emoji: '🏺', teacher: '지연우', teacherEmoji: '👨', desc: '지속 데미지와 버티기에 특화되어 있습니다.' },
+            TECH: { id: 'TECH', name: '기술', emoji: '🔧', teacher: '안형진', teacherEmoji: '👷', desc: '카드 강화와 방어도 구축에 유리합니다.' },
+            MUSIC: { id: 'MUSIC', name: '음악', emoji: '🎵', teacher: '김영주', teacherEmoji: '👩‍🎤', desc: '정신력 회복과 기절 효과가 있습니다.' },
+            ART: { id: 'ART', name: '미술', emoji: '🎨', teacher: '이예린', teacherEmoji: '👩‍🎨', desc: '특수한 방어 기제와 강력한 마나 소모 공격을 합니다.' },
+            PE: { id: 'PE', name: '체육', emoji: '⚽', teacher: '신유진', teacherEmoji: '🏋️', desc: '힘을 모아 강력한 한 방을 날립니다.' },
+            HOME: { id: 'HOME', name: '가정', emoji: '🍳', teacher: '박지원', teacherEmoji: '👩‍🍳', desc: '회복과 비용 감소 등 보조에 능합니다.' },
+            ETHICS: { id: 'ETHICS', name: '도덕', emoji: '⚖️', teacher: '김신영', teacherEmoji: '🧑‍⚖️', desc: '정신력 관리와 버프 해제 능력이 있습니다.' },
+            SOCIAL: { id: 'SOCIAL', name: '사회', emoji: '🌐', teacher: '손혜민', teacherEmoji: '👩‍🏫', desc: '다른 교과와의 시너지 효과로 덱의 잠재력을 폭발시킵니다.' },
+            // [추가] 히든 과목: 학교 관리자 (기본적으로는 숨겨짐)
+            ADMIN: { id: 'ADMIN', name: '학교 관리자', emoji: '👑', teacher: '교장과 교감', teacherEmoji: '🏫', desc: '교장과 교감의 권능을 사용합니다.' },
+
+        };
+
+        const RARITY = {
+            COMMON: { id: 'COMMON', name: '일반', color: 'bg-white border-slate-300 text-slate-800', probability: 60, price: 1000 },
+            SPECIAL: { id: 'SPECIAL', name: '특별', color: 'bg-blue-50 border-blue-400 text-blue-900', probability: 25, price: 2000 },
+            RARE: { id: 'RARE', name: '희귀', color: 'bg-pink-50 border-pink-400 text-pink-900', probability: 10, price: 3000 },
+            LEGEND: { id: 'LEGEND', name: '전설', color: 'bg-yellow-50 border-yellow-400 text-yellow-900', probability: 5, price: 4000 },
+        };
+
+        const RELICS = [
+            { id: 'r1', name: '천재 교과서', desc: '정신력을 영구적으로 2 상승시킵니다.', effect: 'MAX_MANA', val: 2, emoji: '📚' },
+            { id: 'r2', name: '대송중 깃발', desc: '한 턴에 드로우하는 카드 수를 1 상승시킵니다.', effect: 'DRAW_PLUS', val: 1, emoji: '🚩' },
+            { id: 'r3', name: '대회 트로피', desc: '최대 체력을 30 상승시킵니다.', effect: 'MAX_HP', val: 30, emoji: '🏆' },
+            { id: 'r4', name: '컴퓨터 싸인펜', desc: '펜 찌르기의 데미지를 영구적으로 10 상승시킵니다.', effect: 'PEN_BUFF', val: 10, emoji: '🖍️' },
+            { id: 'r5', name: '이온 음료', desc: '매 전투 첫 턴에 정신력을 1 추가로 얻습니다.', effect: 'START_MANA', val: 1, emoji: '🥤' },
+            { id: 'r6', name: '지우개', desc: '전투 시작 시 모든 적에게 약화 1을 부여합니다.', effect: 'START_WEAK', val: 1, emoji: '🧼' },
+            { id: 'r7', name: '어머니의 도시락', desc: '전투가 끝날 때마다 체력을 5 회복합니다.', effect: 'POST_COMBAT_HEAL', val: 5, emoji: '🍱' },
+            { id: 'r8', name: '노이즈 캔슬링', desc: '매 전투마다 첫 번째 디버프를 막아줍니다.', effect: 'DEBUFF_IMMUNE', val: 1, emoji: '🎧' },
+            { id: 'r9', name: '스터디 플래너', desc: '전투 시작 시 방어도 10을 얻고 시작합니다.', effect: 'START_BLOCK', val: 10, emoji: '📅' },
+            { id: 'r10', name: '자기주도학습', desc: '전투 중 매 턴마다 방어도가 사라지지 않고 유지됩니다.', effect: 'BLOCK_RETAIN', val: 0, emoji: '🧱' },
+        ];
+
+        const CARD_DATABASE = [
+            { id: 'b1', subject: 'BASIC', rarity: 'COMMON', name: '펜 찌르기', cost: 2, type: 'ATTACK', val: 8, desc: '🖊️ 8의 피해를 줍니다.' },
+            { id: 'b2', subject: 'BASIC', rarity: 'COMMON', name: '교과서 방어', cost: 2, type: 'DEFENSE', val: 7, desc: '🛡️ 방어도 7을 얻습니다.' },
+            { id: 'b3', subject: 'BASIC', rarity: 'SPECIAL', name: '필통 후려치기', cost: 4, type: 'ATTACK', val: 4, desc: '✏️ 4의 피해를 주고 기절시킵니다.', effect: 'STUN' },
+            { id: 'k1', subject: 'KOREAN', rarity: 'COMMON', name: '받아쓰기', cost: 1, type: 'ATTACK', val: 10, desc: '📝 10의 피해를 줍니다.' },
+            { id: 'k2', subject: 'KOREAN', rarity: 'SPECIAL', name: '시 낭독', cost: 1, type: 'DEFENSE', val: 10, desc: '📖 방어도 10, 카드 1장 드로우.', effect: 'DRAW', effectVal: 1 },
+            { id: 'k3', subject: 'KOREAN', rarity: 'RARE', name: '훈민정음', cost: 2, type: 'ATTACK', val: 18, desc: '🇰🇷 18의 피해, 적에게 약화 2 부여.', effect: 'WEAK', effectVal: 2 },
+            { id: 'k4', subject: 'KOREAN', rarity: 'COMMON', name: '수필 쓰기', cost: 1, type: 'SKILL', val: 0, desc: '✍️ 덱의 공격 카드를 1장 복사하여 손으로 가져옵니다.', effect: 'COPY_ATTACK_FROM_DECK' },
+            { id: 'k5', subject: 'KOREAN', rarity: 'LEGEND', name: '문학의 밤', cost: 3, type: 'ATTACK', val: 30, desc: '🌃 모든 적에게 30 피해.', effect: 'AOE_ATTACK' },
+            { id: 'k6', subject: 'KOREAN', rarity: 'SPECIAL', name: '맞춤법 교정', cost: 1, type: 'SKILL', val: 0, desc: '💔 적에게 취약 1을 부여합니다.', effect: 'VULNERABLE', effectVal: 1 },
+            { id: 'm1', subject: 'MATH', rarity: 'COMMON', name: '피타고라스', cost: 1, type: 'ATTACK', val: 9, desc: '📐 9의 피해. 이전 카드가 수학이면 +4 피해.', effect: 'MATH_COMBO', effectVal: 4 },
+            { id: 'm2', subject: 'MATH', rarity: 'SPECIAL', name: '이차방정식', cost: 2, type: 'ATTACK', val: 15, desc: '✖️ 15의 피해. 손패의 수학 카드 비용 -1.', effect: 'MATH_COST_REDUCE' },
+            { id: 'm3', subject: 'MATH', rarity: 'RARE', name: '확률과 통계', cost: 1, type: 'SKILL', val: 0, desc: '🎲 50% 확률로 정신력 2 회복, 실패시 체력 5 감소.', effect: 'GAMBLE_MANA' },
+            { id: 'm4', subject: 'MATH', rarity: 'LEGEND', name: '미적분', cost: 3, type: 'ATTACK', val: 15, desc: '∫ 이번 턴 사용한 수학 카드 수만큼 피해량 2배씩 증가 (기본 15).', effect: 'MATH_MULTIPLY' },
+            { id: 'm5', subject: 'MATH', rarity: 'COMMON', name: '원뿔 찌르기', cost: 2, type: 'ATTACK', val: 12, desc: '📐 12의 피해를 줍니다.' },
+            { id: 'm6', subject: 'MATH', rarity: 'SPECIAL', name: '구구단', cost: 0, type: 'SKILL', val: 0, desc: '✖️ 카드 1장 드로우.', effect: 'DRAW', effectVal: 1 },
+            { id: 'e1', subject: 'ENGLISH', rarity: 'COMMON', name: '지각동사', cost: 1, type: 'ATTACK', val: 6, desc: '👀 6의 피해. 카드 1장 드로우.', effect: 'DRAW', effectVal: 1 },
+            { id: 'e2', subject: 'ENGLISH', rarity: 'SPECIAL', name: '원어민 회화', cost: 3, type: 'SKILL', val: 0, desc: '🗣️ 적을 1턴간 기절시킵니다.', effect: 'STUN' },
+            { id: 'e3', subject: 'ENGLISH', rarity: 'RARE', name: '간접 의문문', cost: 1, type: 'DEFENSE', val: 12, desc: '❓ 방어도 12. 다음 턴 적의 공격 1회 무효화.', effect: 'DODGE' },
+            { id: 'e4', subject: 'ENGLISH', rarity: 'COMMON', name: '단어 시험', cost: 0, type: 'ATTACK', val: 7, desc: '🅰️ 7의 피해를 줍니다.', },
+            { id: 'e5', subject: 'ENGLISH', rarity: 'RARE', name: '수동태', cost: 2, type: 'SKILL', val: 0, desc: '🛡️ 현재 방어도를 3배로 증가시킵니다.', effect: 'BLOCK_MULTIPLY', effectVal: 3 },
+            { id: 'e6', subject: 'ENGLISH', rarity: 'LEGEND', name: '본문 해석', cost: 1, type: 'ATTACK', val: 0, desc: '📖 방어도 수치만큼 적에게 피해를 줍니다.', effect: 'BODY_SLAM' },
+            { id: 's1', subject: 'SCIENCE', rarity: 'COMMON', name: '작용 반작용', cost: 0, type: 'ATTACK', val: 12, desc: '💥 12 피해. 내 체력 3 감소.', selfDamage: 3 },
+            { id: 's2', subject: 'SCIENCE', rarity: 'SPECIAL', name: '핵분열', cost: 2, type: 'ATTACK', val: 25, desc: '☢️ 25 피해. 내 체력 5 감소.', selfDamage: 5 },
+            { id: 's3', subject: 'SCIENCE', rarity: 'RARE', name: '세포 분열', cost: 1, type: 'SKILL', val: 0, desc: '🦠 덱의 무작위 공격 카드를 복제하여 손에 가져옵니다.', effect: 'DUPLICATE_ATTACK' },
+            { id: 's4', subject: 'SCIENCE', rarity: 'LEGEND', name: '빅뱅', cost: 4, type: 'ATTACK', val: 50, desc: '🌌 모든 적에게 50 피해. 내 체력 10 감소.', effect: 'AOE_ATTACK', selfDamage: 10 },
+            { id: 's5', subject: 'SCIENCE', rarity: 'COMMON', name: '광합성', cost: 1, type: 'SKILL', val: 0, desc: '☀️ 체력을 5 회복합니다.', effect: 'HEAL', effectVal: 5 },
+            { id: 's6', subject: 'SCIENCE', rarity: 'SPECIAL', name: '산화', cost: 2, type: 'ATTACK', val: 8, desc: '🧪 8의 피해, 적에게 취약 1 부여.', effect: 'VULNERABLE_ATTACK', effectVal: 1 },
+            { id: 'h1', subject: 'HISTORY', rarity: 'COMMON', name: '독립운동', cost: 1, type: 'ATTACK', val: 5, desc: '🇰🇷 5 피해를 주고, 독(매 턴 피해) 3 부여.', effect: 'POISON', effectVal: 3 },
+            { id: 'h2', subject: 'HISTORY', rarity: 'SPECIAL', name: '산업혁명', cost: 2, type: 'SKILL', val: 0, desc: '🏭 이번 전투 동안 매 턴 시작 시 방어도 5 획득.', effect: 'BUFF_BLOCK', effectVal: 5 },
+            { id: 'h3', subject: 'HISTORY', rarity: 'RARE', name: '세계 4대 문명', cost: 2, type: 'SKILL', val: 0, desc: '🌍 적 전체에게 6 피해를 주고 독 5 부여. (소멸)', effect: 'AOE_DMG_POISON', val: 6, effectVal: 5, exhaust: true },
+            { id: 'h4', subject: 'HISTORY', rarity: 'LEGEND', name: '역사의 수레바퀴', cost: 2, type: 'SKILL', val: 0, desc: '🎡 적의 독 중첩을 2배로 만듭니다.', effect: 'DOUBLE_POISON' },
+            { id: 'h5', subject: 'HISTORY', rarity: 'SPECIAL', name: '직지심체요절', cost: 1, type: 'SKILL', val: 0, desc: '📜 체력을 10 회복합니다. (소멸)', effect: 'HEAL', effectVal: 10, exhaust: true },
+            { id: 'h6', subject: 'HISTORY', rarity: 'COMMON', name: '흑사병', cost: 1, type: 'SKILL', val: 0, desc: '🐀 적에게 독 5를 부여합니다.', effect: 'POISON', effectVal: 5 },
+            { id: 't1', subject: 'TECH', rarity: 'RARE', name: '증기 기관', cost: 2, type: 'SKILL', val: 0, desc: '🚂 손패의 카드 강화 (+1).', effect: 'UPGRADE_HAND', effectVal: 1 },
+            { id: 't2', subject: 'TECH', rarity: 'COMMON', name: '메이커실', cost: 1, type: 'DEFENSE', val: 6, desc: '🔨 방어도 6. 덱 맨 위 카드 강화 (전투 중).', effect: 'UPGRADE_DECK_TOP' },
+            { id: 't3', subject: 'TECH', rarity: 'RARE', name: '아치 구조', cost: 1, type: 'DEFENSE', val: 15, desc: '🌉 방어도 15를 얻습니다.' },
+            { id: 't4', subject: 'TECH', rarity: 'LEGEND', name: '정수리 찍기', cost: 3, type: 'ATTACK', val: 40, desc: '🔨 40 피해를 주고 적을 기절시킵니다.', effect: 'STUN_ATTACK' },
+            { id: 't5', subject: 'TECH', rarity: 'SPECIAL', name: '페니실린 발견', cost: 2, type: 'SKILL', val: 0, desc: '💊 적의 공격을 1회 회피합니다. (소멸).', effect: 'DODGE', effectVal: 1, exhaust: true },
+            { id: 't6', subject: 'TECH', rarity: 'COMMON', name: '나노 로봇', cost: 1, type: 'ATTACK', val: 6, desc: '🤖 6 피해. 덱 맨 위 카드 강화.', effect: 'ATTACK_UPGRADE_DECK' },
+            { id: 'mu1', subject: 'MUSIC', rarity: 'COMMON', name: '단소 휘두르기', cost: 1, type: 'ATTACK', val: 6, desc: '🎋 6 피해. 20% 확률로 기절.', effect: 'CHANCE_STUN', effectVal: 20 },
+            { id: 'mu2', subject: 'MUSIC', rarity: 'SPECIAL', name: '비발디 사계', cost: 2, type: 'SKILL', val: 0, desc: '🎻 체력을 10 회복합니다. (소멸)', effect: 'HEAL', effectVal: 10, exhaust: true },
+            { id: 'mu3', subject: 'MUSIC', rarity: 'RARE', name: '합창 대회', cost: 3, type: 'SKILL', val: 0, desc: '🎤 정신력을 모두 회복합니다. (소멸)', effect: 'RECOVER_MANA_FULL', exhaust: true },
+            { id: 'mu4', subject: 'MUSIC', rarity: 'LEGEND', name: '가창 수행', cost: 3, type: 'SKILL', val: 20, desc: '🎤 적 전체를 기절시키고 20 피해를 줍니다.', effect: 'AOE_STUN_ATTACK', effectVal: 15 },
+            { id: 'mu5', subject: 'MUSIC', rarity: 'RARE', name: '클래식 감상', cost: 2, type: 'SKILL', val: 0, desc: '🎼 체력 5 회복, 카드 2장 드로우.', effect: 'HEAL_DRAW', effectVal: 5, drawVal: 2 },
+            { id: 'mu6', subject: 'MUSIC', rarity: 'SPECIAL', name: '휘모리 장단', cost: 1, type: 'SKILL', val: 0, desc: '🥁 적에게 취약 1 부여, 카드 1장 드로우.', effect: 'VULNERABLE_DRAW', effectVal: 1 },
+            { id: 'a1', subject: 'ART', rarity: 'COMMON', name: '초상화', cost: 1, type: 'DEFENSE', val: 8, desc: '🖼️ 방어도 8을 얻습니다.' },
+            { id: 'a2', subject: 'ART', rarity: 'SPECIAL', name: '풍경화', cost: 3, type: 'SKILL', val: 0, desc: '🏞️ 적의 공격을 1회 회피합니다.', effect: 'DODGE', effectVal: 1 },
+            { id: 'a3', subject: 'ART', rarity: 'RARE', name: '조소', cost: 2, type: 'ATTACK', val: 10, desc: '🗿 10 피해. 방어도 10 획득.', effect: 'ATTACK_BLOCK' },
+            { id: 'a4', subject: 'ART', rarity: 'LEGEND', name: '스크래치 아트', cost: 0, type: 'ATTACK', val: 0, desc: '🔮 현재 정신력을 모두 소모하여, 소모한 양 x15 피해를 줍니다.', effect: 'MANA_BURN_ATTACK' },
+            { id: 'a5', subject: 'ART', rarity: 'RARE', name: '물감 보충', cost: 0, type: 'SKILL', val: 0, desc: '🎨 정신력 1 회복, 카드 1장 드로우.', effect: 'MANA_DRAW', effectVal: 1 },
+            { id: 'a6', subject: 'ART', rarity: 'SPECIAL', name: '젠탱글', cost: 2, type: 'ATTACK', val: 13, desc: '🌀 13 피해, 적에게 약화 1 부여.', effect: 'WEAK', effectVal: 1 },
+            { id: 'p1', subject: 'PE', rarity: 'SPECIAL', name: '강 스파이크', cost: 2, type: 'ATTACK', val: 15, desc: '🏐 15 피해. 체력이 50% 이하면 피해 2배.', effect: 'LOW_HP_BONUS' },
+            { id: 'p2', subject: 'PE', rarity: 'COMMON', name: '셔틀런', cost: 0, type: 'ATTACK', val: 3, desc: '🏃 3 피해. 카드 1장 드로우.', effect: 'DRAW', effectVal: 1 },
+            { id: 'p3', subject: 'PE', rarity: 'RARE', name: '도핑(?)', cost: 1, type: 'SKILL', val: 0, desc: '💊 체력 5 감소. 이번 턴 공격력 2배.', effect: 'DOUBLE_DMG', selfDamage: 5 },
+            { id: 'p4', subject: 'PE', rarity: 'RARE', name: '진심 펀치', cost: 3, type: 'ATTACK', val: 35, desc: '👊 힘을 2 얻고 35 피해를 줍니다.', effect: 'STRENGTH_ATTACK', effectVal: 2 },
+            { id: 'p5', subject: 'PE', rarity: 'SPECIAL', name: '근육 펌핑', cost: 1, type: 'SKILL', val: 0, desc: '💪 다음 공격 카드의 피해량이 2배가 됩니다.', effect: 'NEXT_ATTACK_DOUBLE' },
+            { id: 'p6', subject: 'PE', rarity: 'LEGEND', name: '3대 측정', cost: 0, type: 'SKILL', val: 0, desc: '🏋️ 정신력을 모두 소모하여 소모량의 2배만큼 힘을 얻습니다.', effect: 'MANA_BURN_STRENGTH' },
+            { id: 'ho1', subject: 'HOME', rarity: 'COMMON', name: '토스트', cost: 0, type: 'SKILL', val: 0, desc: '🍞 체력을 5 회복합니다. (소멸)', effect: 'HEAL', effectVal: 5, exhaust: true },
+            { id: 'ho2', subject: 'HOME', rarity: 'SPECIAL', name: '바느질', cost: 1, type: 'SKILL', val: 0, desc: '🧵 손패의 모든 카드 비용 -1 (이번 턴만).', effect: 'COST_DOWN_HAND' },
+            { id: 'ho3', subject: 'HOME', rarity: 'RARE', name: '사우어크라프트 먹이기', cost: 3, type: 'SKILL', val: 0, desc: '🥬 적을 기절시키고 독 5를 부여합니다.', effect: 'STUN_POISON', effectVal: 5 },
+            { id: 'ho4', subject: 'HOME', rarity: 'LEGEND', name: '탄단지 섭취', cost: 3, type: 'SKILL', val: 0, desc: '🍱 체력을 완전히 회복합니다. (소멸)', effect: 'FULL_HEAL', exhaust: true },
+            { id: 'ho5', subject: 'HOME', rarity: 'RARE', name: '행복한 가족', cost: 2, type: 'SKILL', val: 0, desc: '👨‍👩‍👧‍👦 체력 10 회복, 카드 1장 드로우.', effect: 'HEAL_DRAW', effectVal: 10, drawVal: 1 },
+            { id: 'ho6', subject: 'HOME', rarity: 'SPECIAL', name: '업사이클링', cost: 2, type: 'DEFENSE', val: 15, desc: '♻️ 방어도 15, 카드 1장 드로우.', effect: 'BLOCK_DRAW', drawVal: 1 },
+            { id: 'et1', subject: 'ETHICS', rarity: 'COMMON', name: '가치 찾기', cost: 0, type: 'SKILL', val: 0, desc: '⚖️ 정신력 1 회복.', effect: 'RECOVER_MANA', effectVal: 1 },
+            { id: 'et2', subject: 'ETHICS', rarity: 'SPECIAL', name: '봉사 활동', cost: 1, type: 'SKILL', val: 0, desc: '🧹 적의 모든 버프 제거.', effect: 'DISPEL' },
+            { id: 'et3', subject: 'ETHICS', rarity: 'SPECIAL', name: '칭찬하기', cost: 1, type: 'SKILL', val: 0, desc: '👏 힘 2 증가.', effect: 'STRENGTH', effectVal: 2 },
+            { id: 'et4', subject: 'ETHICS', rarity: 'LEGEND', name: '갈등 해결', cost: 1, type: 'ATTACK', val: 10, desc: '🕊️ 10 피해. 사용 시마다 이 카드의 피해량 +4 (전투 중).', effect: 'SCALING_ON_USE', effectVal: 4 },
+            { id: 'et5', subject: 'ETHICS', rarity: 'RARE', name: '도덕적 비판', cost: 2, type: 'ATTACK', val: 11, desc: '🗣️ 11 피해, 적에게 취약 1 부여.', effect: 'VULNERABLE_ATTACK', effectVal: 1 },
+            { id: 'et6', subject: 'ETHICS', rarity: 'RARE', name: '무위자연', cost: 3, type: 'SKILL', val: 0, desc: '🍃 카드 1장 드로우, 다음 적 공격 1회 무효화.', effect: 'DODGE_DRAW', drawVal: 1 },
+            { id: 'soc1', subject: 'SOCIAL', rarity: 'COMMON', name: '지리 답사', cost: 1, type: 'SKILL', val: 0, desc: '🗺️ 손패의 모든 카드를 강화(+1)합니다.', effect: 'UPGRADE_HAND', effectVal: 1 },
+            { id: 'soc2', subject: 'SOCIAL', rarity: 'COMMON', name: '정치 비판', cost: 1, type: 'ATTACK', val: 6, desc: '📢 6 피해. 적에게 취약 1(피해 50% 증가)을 부여합니다.', effect: 'VULNERABLE_ATTACK', effectVal: 1 },
+            { id: 'soc3', subject: 'SOCIAL', rarity: 'SPECIAL', name: '문화 전파', cost: 1, type: 'SKILL', val: 0, desc: '🌊 덱의 무작위 공격 카드를 복제하여 손에 가져옵니다.', effect: 'DUPLICATE_ATTACK' },
+            { id: 'soc4', subject: 'SOCIAL', rarity: 'SPECIAL', name: '자유 무역', cost: 1, type: 'SKILL', val: 0, desc: '🚢 이번 턴 동안 손패의 모든 카드 비용을 1 줄입니다.', effect: 'COST_DOWN_HAND' },
+            { id: 'soc5', subject: 'SOCIAL', rarity: 'RARE', name: '시장 독점!', cost: 2, type: 'SKILL', val: 0, desc: '📱 카드를 3장 드로우합니다.', effect: 'DRAW', effectVal: 3 },
+            { id: 'soc6', subject: 'SOCIAL', rarity: 'LEGEND', name: '보이지 않는 손', cost: 2, type: 'SKILL', val: 0, desc: '🖐️ 이번 턴 동안 주는 모든 피해가 2배가 됩니다.', effect: 'DOUBLE_DMG' },
+            // --- [추가] 히든 직업: 학교 관리자 카드 (OP) ---
+            { id: 'ad1', subject: 'ADMIN', rarity: 'SPECIAL', name: '교외체험학습', cost: 1, type: 'SKILL', val: 0, desc: '✈️ 출석 인정! 적의 공격을 2회 회피합니다.', effect: 'DODGE', effectVal: 2 },
+            { id: 'ad2', subject: 'ADMIN', rarity: 'SPECIAL', name: '훈화 말씀', cost: 1, type: 'SKILL', val: 0, desc: '🗣️ 짧게 하신다면서! 적 전체를 기절시킵니다.' , effect: 'AOE_STUN_ONLY' },
+            { id: 'ad3', subject: 'ADMIN', rarity: 'RARE', name: '교내 봉사', cost: 1, type: 'ATTACK', val: 22, desc: '🧹 이럴수가! 22 피해를 주고 독 11을 부여합니다.', effect: 'POISON', effectVal: 11 },
+            { id: 'ad4', subject: 'ADMIN', rarity: 'RARE', name: '교무 회의', cost: 2, type: 'DEFENSE', val: 22, desc: '📑 교무실 출입 금지! 방어도 22, 카드 3장 드로우.', effect: 'BLOCK_DRAW', drawVal: 3 },
+            { id: 'ad5', subject: 'ADMIN', rarity: 'LEGEND', name: '상장 수여', cost: 3, type: 'SKILL', val: 0, desc: '📜 참 잘했어요! 다음 공격 카드의 피해량이 3배가 됩니다.', effect: 'NEXT_ATTACK_TRIPLE' },
+        ];
+
+        const ENEMIES = {
+            IN_SCHOOL: [
+                { name: '뒤틀린 교과서', hp: 20, dmg: 5, emoji: '📘' },
+                { name: '융합된 담라 캔디', hp: 30, dmg: 5, emoji: '🍬' },
+                { name: '끔찍한 변기', hp: 35, dmg: 6, emoji: '🚽' },
+                { name: '썩은 사우어크라프트', hp: 25, dmg: 8, emoji: '🥬' },
+                { name: '분필가루의 악마', hp: 22, dmg: 5, emoji: '🌫️' },
+                { name: '고장난 스피커', hp: 35, dmg: 4, emoji: '📢' },
+                { name: '조작된 시험지', hp: 30, dmg: 7, emoji: '💯' },
+                { name: '끊임없는 훈화', hp: 35, dmg: 4, emoji: '🗣️' },
+                { name: '졸음 귀신', hp: 30, dmg: 5, emoji: '😪' },
+            ],
+            OUT_SCHOOL: [
+                { name: '골목길 일진', hp: 35, dmg: 7, emoji: '🚬' },
+                { name: '불법도박 선배', hp: 30, dmg: 7, emoji: '🃏' },
+                { name: '헤비 스모커', hp: 40, dmg: 6, emoji: '🌫️' },
+                { name: '지옥의 킥보드', hp: 30, dmg: 10, emoji: '🛴' },
+                { name: '가출한 실내화', hp: 25, dmg: 9, emoji: '👟' },
+                { name: '황천의 핫도그', hp: 22, dmg: 12, emoji: '🌭' },
+                { name: 'PC방 죽돌이', hp: 40, dmg: 7, emoji: '🎧' },
+            ]
+        };
+
+        const EVENTS = [
+            { id: 'ne1', title: "반 대항 축구 대회", desc: "체육대회 예선전이다! 우리 반의 승리를 위해...", choices: [{ txt: "참가한다", res: "GOOD", reward: { type: 'MAX_MANA', val: 1 }, msg: "우승했다! 최대 정신력 +1" }, { txt: "응원한다", res: "GOOD", reward: { type: 'HEAL', val: 15 }, msg: "목이 쉬었다. 체력 +15" }] },
+            { id: 'ne2', title: "모르는 문제", desc: "수학 문제가 너무 어렵다. 누구에게 물어볼까?", choices: [{ txt: "최영광", res: "GOOD", reward: { type: 'UPGRADE_RANDOM', cost: 0 }, msg: "친절하게 알려줬다. 카드 1장 강화" }, { txt: "강성현", res: "BAD", reward: { type: 'START_MANA_DEBUFF', val: 1 }, msg: "오히려 더 헷갈리게 만들었다. 다음 전투 정신력 -1" }, { txt: "전혜성", res: "GOOD", reward: { type: 'GOLD', val: 200 }, msg: "알려주는 대신 매점 빵을 요구했다. 200원 획득(??)" }] },
+            { id: 'ne3', title: "지호지호의 기묘한 모험", desc: "복도에서 지호가 기묘한 포즈를 취하고 있다.", choices: [{ txt: "같이 포즈를 취한다", res: "GOOD", reward: { type: 'HEAL', val: 20 }, msg: "기묘한 에너지가 솟아난다! 체력 +20" }, { txt: "무시한다", res: "BAD", reward: { type: 'HP_LOSS', val: 2 }, msg: "부끄러움은 나의 몫... 체력 -2" }] },
+            { id: 'ne4', title: "자전거의 양민기", desc: "양민기가 복도에서 자전거를 타고 돌진해온다!", choices: [{ txt: "피한다", res: "GOOD", reward: { type: 'GOLD', val: 100 }, msg: "피하면서 동전을 주웠다. 100원 획득" }, { txt: "막아선다", res: "BAD", reward: { type: 'HP_LOSS', val: 10 }, msg: "치였다... 체력 -10" }] },
+            { id: 'ne5', title: "소음 트리오", desc: "최준서, 최윤후, 최성민이 교실에서 EDM을 틀고 춤추고 있다.", choices: [{ txt: "같이 춤춘다", res: "GOOD", reward: { type: 'UPGRADE_RANDOM', cost: 0 }, msg: "스트레스 해소! 카드 1장 강화" }, { txt: "조용히 하라고 한다", res: "BAD", reward: { type: 'START_MANA_DEBUFF', val: 2 }, msg: "무시당했다. 스트레스... 다음 전투 정신력 -2" }] },
+            { id: 'ne6', title: "이다온의 배구 레슨", desc: "이다온이 스파이크 시범을 보이고 있다.", choices: [{ txt: "배운다", res: "GOOD", reward: { type: 'PERM_STRENGTH', val: 1 }, msg: "손맛을 알았다! 영구적으로 힘 +1" }, { txt: "구경한다", res: "GOOD", reward: { type: 'HEAL', val: 10 }, msg: "보는 것만으로도 운동이 된다. 체력 +10" }] },
+            { id: 'ne7', title: "지연우 선생님의 호출", desc: "역사 선생님이 부르신다. 내가 뭘 잘못했나?", choices: [{ txt: "간다", res: "GOOD", reward: { type: 'GOLD', val: 500 }, msg: "심부름 값이었다. 500원 획득!" }, { txt: "도망간다", res: "BAD", reward: { type: 'HP_LOSS', val: 5 }, msg: "넘어졌다. 체력 -5" }] },
+            { id: 'ne8', title: "염정현 선생님의 짐", desc: "영어 선생님이 짐을 들고 계신다.", choices: [{ txt: "노트북", res: "GOOD", reward: { type: 'UPGRADE_RANDOM', cost: 0 }, msg: "가볍다! 카드 1장 강화" }, { txt: "물통", res: "GOOD", reward: { type: 'HEAL', val: 15 }, msg: "시원한 물을 한 잔 주셨다. 체력 +15" }, { txt: "학습지", res: "BAD", reward: { type: 'HP_LOSS', val: 5 }, msg: "너무 무겁다... 허리 삐끗. 체력 -5" }] },
+            { id: 'ne9', title: "사탕 구걸", desc: "당이 떨어진다. 교무실로 가자.", choices: [{ txt: "오지현 T", res: "GOOD", reward: { type: 'HEAL', val: 20 }, msg: "초콜릿을 주셨다! 체력 +20" }, { txt: "이예린 T", res: "GOOD", reward: { type: 'GOLD', val: 300 }, msg: "매점 가라며 용돈을 주셨다. 300원 획득" }, { txt: "전동선 T", res: "BAD", reward: { type: 'START_MANA_DEBUFF', val: 1 }, msg: "영어 단어 시험을 보셨다... 정신력 -1" }] },
+            { id: 'ne10', title: "애니메이션 동아리", desc: "신설 동아리 가입 권유를 받았다.", choices: [{ txt: "가입한다", res: "GOOD", reward: { type: 'MAX_MANA', val: 1 }, msg: "덕력이 상승했다. 최대 정신력 +1" }, { txt: "거절한다", res: "GOOD", reward: { type: 'GOLD', val: 100 }, msg: "회비를 아꼈다. 100원 획득" }] },
+            { id: 'ne11', title: "교감 선생님의 등장", desc: "술래잡기하다 딱 걸렸다.", choices: [{ txt: "죄송합니다", res: "GOOD", reward: { type: 'HEAL', val: 5 }, msg: "용서해주셨다. 안도감에 체력 +5" }, { txt: "도망간다", res: "BAD", reward: { type: 'HP_LOSS', val: 10 }, msg: "잡혔다... 얼차려. 체력 -10" }] },
+            { id: 'ne12', title: "안준서의 복싱", desc: "안준서가 쉐도우 복싱 중이다.", choices: [{ txt: "스파링 신청", res: "BAD", reward: { type: 'HP_LOSS', val: 15 }, msg: "맞았다. 체력 -15" }, { txt: "자세 교정", res: "GOOD", reward: { type: 'PERM_STRENGTH', val: 1 }, msg: "타격감이 좋아졌다. 영구적으로 힘 +1" }] },
+            { id: 'ne13', title: "오연우의 장난", desc: "오연우가 몰래 신발끈을 묶어놨다.", choices: [{ txt: "푼다", res: "BAD", reward: { type: 'START_MANA_DEBUFF', val: 1 }, msg: "귀찮다. 다음 전투 정신력 -1" }, { txt: "복수한다", res: "GOOD", reward: { type: 'GOLD', val: 150 }, msg: "장난감을 뺏었다. 150원 획득" }] },
+            { id: 'ne14', title: "김도균의 놀림", desc: "자꾸 옆에서 깐죽거린다.", choices: [{ txt: "참는다", res: "GOOD", reward: { type: 'MAX_MANA', val: 1 }, msg: "인내심이 늘었다. 최대 정신력 +1" }, { txt: "응징한다", res: "BAD", reward: { type: 'HP_LOSS', val: 5 }, msg: "싸웠다. 체력 -5" }] },
+            { id: 'ne15', title: "반장 임소율", desc: "떠들다가 걸렸다. 이름이 적힐 위기!", choices: [{ txt: "뇌물(매점빵)", res: "TRADE", reward: { type: 'GOLD_LOSS', cost: 300 }, msg: "300원을 썼지만 이름은 빠졌다." }, { txt: "싹싹 빈다", res: "BAD", reward: { type: 'START_MANA_DEBUFF', val: 1 }, msg: "혼났다. 정신력 -1" }] },
+            { id: 'ne16', title: "무법자 장혁", desc: "장혁이 복도를 점거했다.", choices: [{ txt: "피해간다", res: "GOOD", reward: { type: 'HEAL', val: 5 }, msg: "안전이 최고. 체력 +5" }, { txt: "돌파한다", res: "BAD", reward: { type: 'HP_LOSS', val: 8 }, msg: "부딪혔다. 체력 -8" }] },
+            { id: 'ne17', title: "민트초코 치킨", desc: "오늘 급식 메뉴가 심상치 않다.", choices: [{ txt: "먹는다", res: "BAD", reward: { type: 'HP_LOSS', val: 5 }, msg: "속이 안 좋다... 체력 -5" }, { txt: "거른다", res: "BAD", reward: { type: 'START_MANA_DEBUFF', val: 1 }, msg: "배고프다. 정신력 -1" }] },
+            { id: 'ne18', title: "선생님 부재중", desc: "수업 종이 쳤는데 선생님이 안 오신다.", choices: [{ txt: "부르러 간다", res: "GOOD", reward: { type: 'UPGRADE_RANDOM', cost: 0 }, msg: "선생님이 고맙다며 팁을 주셨다. 카드 강화" }, { txt: "자습한다", res: "GOOD", reward: { type: 'MAX_MANA', val: 1 }, msg: "공부 효율 업! 최대 정신력 +1" }] },
+            { id: 'ne19', title: "수행평가 폭탄", desc: "밀린 과제가 산더미다.", choices: [{ txt: "밤샘", res: "BAD", reward: { type: 'HP_LOSS', val: 10 }, msg: "피곤하다. 체력 -10" }, { txt: "포기", res: "BAD", reward: { type: 'GOLD_LOSS', cost: 500 }, msg: "장학금을 놓쳤다. 500원 손실" }] },
+            { id: 'ne20', title: "염정현 T의 뽑기", desc: "영어 선생님이 뽑기판을 들고 오셨다.", choices: [{ txt: "뽑는다", res: "RANDOM", reward: { type: 'YJH_GACHA' }, msg: "결과는?" }, { txt: "구경한다", res: "GOOD", reward: { type: 'GET_RARE_CARD' }, msg: "참여상으로 좋은 카드를 주셨다!" }] },
+            { id: 'ne21', title: "정준서의 교내 순찰", desc: "정준서가 교내 순찰을 같이 하자고 한다. 같이 갈까 말까?", choices: [{ txt: "같이 간다", res: "GOOD", reward: { type: 'UPGRADE_RANDOM', cost: 0 }, msg: "순찰하며 주운 아이템으로 카드를 강화했다!" }, { txt: "거절한다", res: "BAD", reward: { type: 'START_MANA_DEBUFF', val: 1 }, msg: "정준서가 삐져서 다음 전투 정신력 -1" }] },
+            { id: 'ne22', title: "박강민과 운동하기", desc: "박강민이 함께 10km 러닝을 하자고 한다. 할까 말까?", choices: [{ txt: "한다", res: "GOOD", reward: { type: 'MAX_HP', val: 10 }, msg: "체력이 튼튼해졌다! 최대 체력 +10" }, { txt: "도망간다", res: "BAD", reward: { type: 'HP_LOSS', val: 5 }, msg: "잡혀서 억지로 뛰었다. 체력 -5" }] },
+            { id: 'ne23', title: "브르르 브르르 백종희", desc: "백종희가 자기와 함께 릴스를 찍자고 한다. 참여할까 말까?", choices: [{ txt: "참여한다", res: "GOOD", reward: { type: 'GOLD', val: 200 }, msg: "릴스가 떡상했다! 200원 획득" }, { txt: "거절한다", res: "BAD", reward: { type: 'START_MANA_DEBUFF', val: 1 }, msg: "분위기가 싸해졌다. 정신력 -1" }] },
+            { id: 'ne24', title: "복도의 강경환 선생님", desc: "누군가가 강경환 선생님에게 혼나고 있다. 이 길로 갈까 돌아서 갈까?", choices: [{ txt: "이 길로 간다", res: "BAD", reward: { type: 'HP_LOSS', val: 10 }, msg: "괜히 같이 혼났다. 체력 -10" }, { txt: "돌아서 간다", res: "GOOD", reward: { type: 'HEAL', val: 5 }, msg: "안전하게 돌아갔다. 체력 +5" }] },
+            { id: 'ne25', title: "강태진의 호출", desc: "강태진이 나를 은밀히 부른다. '좋은 게 있으니 따라와.'", choices: [{ txt: "수상하지만 따라간다", res: "GOOD", reward: { type: 'MAX_HP', val: 5 }, msg: "맛있는 간식을 얻어먹었다! 최대 체력 +5" }, { txt: "무시한다", res: "GOOD", reward: { type: 'HEAL', val: 0 }, msg: "아무 일도 일어나지 않았다." }] },
+            { id: 'ne26', title: "독서 감상문 대회", desc: "교내 독서 감상문 대회가 열렸다. 마음의 양식을 쌓을 기회?", choices: [{ txt: "참가한다", res: "GOOD", reward: { type: 'MAX_MANA', val: 1 }, msg: "우수상을 받았다! 지혜가 늘어난 기분. 최대 정신력 +1" }, { txt: "그냥 읽는다", res: "GOOD", reward: { type: 'HEAL', val: 10 }, msg: "책을 읽으며 휴식을 취했다. 체력 +10" }] },
+            { id: 'ne27', title: "교실에 떨어진 쓰레기", desc: "복도 한가운데 누군가 쓰레기를 버리고 갔다.", choices: [{ txt: "줍는다", res: "GOOD", reward: { type: 'MAX_MANA', val: 1 }, msg: "착한 일을 하니 기분이 좋아진다. 최대 정신력 +1" }, { txt: "무시한다", res: "BAD", reward: { type: 'START_MANA_DEBUFF', val: 1 }, msg: "양심이 찔린다... 다음 전투 정신력 -1" }] },
+            { id: 'ne28', title: "이동민의 연애 상담", desc: "이동민이 심각한 표정으로 연애 상담을 요청한다.", choices: [{ txt: "진지하게 듣는다", res: "GOOD", reward: { type: 'MAX_MANA', val: 1 }, msg: "인내심의 한계를 넘었다. 최대 정신력 +1" }, { txt: "놀린다", res: "GOOD", reward: { type: 'HEAL', val: 10 }, msg: "한참 웃었다. 스트레스 해소! 체력 +10" }] },
+            { id: 'ne29', title: "한준서의 비밀 제안", desc: "한준서가 위험하지만 솔깃한 제안을 한다. '이거 한 번 해볼래?'", choices: [{ txt: "수락 (체력 -10)", res: "TRADE", reward: { type: 'TRADE_HP_MAXHP', cost: 10, val: 10 }, msg: "위험했지만 몸이 튼튼해진 기분이다! (체력 -10, 최대 체력 +10)" }, { txt: "거절", res: "GOOD", reward: { type: 'HEAL', val: 0 }, msg: "안전이 최고다." }] },
+            { id: 'ne30', title: "정현우와 수영장에", desc: "정현우가 수영을 가르쳐준다고 한다. 갈까?", choices: [{ txt: "배운다", res: "GOOD", reward: { type: 'MAX_HP', val: 5 }, msg: "어푸어푸. 폐활량이 늘었다! 최대 체력 +5" }, { txt: "안 간다", res: "GOOD", reward: { type: 'HEAL', val: 5 }, msg: "집에서 쉬었다. 체력 +5" }] },
+            { id: 'ne31', title: "갑자기 등장한 천도영", desc: "천도영이 기괴한 중국 노래를 부르며 나타났다.", choices: [{ txt: "같이 부른다", res: "GOOD", reward: { type: 'MAX_MANA', val: 1 }, msg: "정신 세계가 확장되었다... 최대 정신력 +1" }, { txt: "도망간다", res: "BAD", reward: { type: 'START_MANA_DEBUFF', val: 1 }, msg: "귀가 아프다. 다음 전투 정신력 -1" }] },
+            { id: 'ne32', title: "농구 한판?", desc: "나유민이 점심 먹기 전에 농구 한 판 하자고 한다.", choices: [{ txt: "한다", res: "GOOD", reward: { type: 'MAX_HP', val: 5 }, msg: "땀을 흘리니 상쾌하다. 최대 체력 +5" }, { txt: "밥 먹으러 간다", res: "GOOD", reward: { type: 'HEAL', val: 10 }, msg: "밥이 보약이다. 체력 +10" }] },
+            { id: 'ne33', title: "알 수 없는 눈빛", desc: "황정민이 가만히 나를 바라보고 있다....뭐지?", choices: [{ txt: "눈싸움 한다", res: "GOOD", reward: { type: 'MAX_MANA', val: 1 }, msg: "기싸움에서 이겼다! 최대 정신력 +1" }, { txt: "무시한다", res: "GOOD", reward: { type: 'HEAL', val: 0 }, msg: "아무 일도 일어나지 않았다." }] },
+            { id: 'ne34', title: "보건실 상담", desc: "보건실에 갔더니 선생님이 비타민을 주신다. 비타민을 먹을까, 상담을 할까?", choices: [{ txt: "비타민 섭취", res: "GOOD", reward: { type: 'MAX_HP', val: 5 }, msg: "건강해진 기분! 최대 체력 +5" }, { txt: "고민 상담", res: "GOOD", reward: { type: 'MAX_MANA', val: 1 }, msg: "마음이 편안해졌다. 최대 정신력 +1" }] },
+            { id: 'ne35', title: "장기 자랑", desc: "전교생 앞에서 노래를 하게 되었다....", choices: [{ txt: "자신있게 부른다", res: "GOOD", reward: { type: 'MAX_MANA', val: 2 }, msg: "엄청난 환호! 자신감 폭발! 최대 정신력 +2" }, { txt: "도망친다", res: "BAD", reward: { type: 'HP_LOSS', val: 5 }, msg: "쪽팔림에 이불킥... 체력 -5" }] },
+            { id: 'ne36', title: "박지우와 낚시 데이트", desc: "박지우가 같이 낚시를 하러 가자는데?", choices: [{ txt: "간다", res: "GOOD", reward: { type: 'MAX_MANA', val: 1 }, msg: "세월을 낚으며 인내심을 길렀다. 최대 정신력 +1" }, { txt: "거절한다", res: "GOOD", reward: { type: 'HEAL', val: 0 }, msg: "집이 최고다." }] },
+            { id: 'ne37', title: "안형진 선생님 팬 클럽", desc: "안형진 선생님이 지나가신다! 인사를 할까 큰절을 할까?", choices: [{ txt: "큰절을 올린다", res: "GOOD", reward: { type: 'MAX_HP', val: 3 }, msg: "선생님이 껄껄 웃으며 사탕을 주셨다. 최대 체력 +3" }, { txt: "그냥 인사한다", res: "GOOD", reward: { type: 'HEAL', val: 5 }, msg: "반갑게 받아주셨다. 체력 +5" }] },
+            { id: 'ne38', title: "서윤우와 주짓수 대결", desc: "서윤우가 주짓수 기술을 사용해 보고 싶다는데?", choices: [{ txt: "대련해준다", res: "TRADE", reward: { type: 'TRADE_HP_MAXHP', cost: 10, val: 10 }, msg: "온몸이 쑤시지만 맷집이 늘었다. (체력 -10, 최대 체력 +10)" }, { txt: "도망간다", res: "GOOD", reward: { type: 'HEAL', val: 0 }, msg: "살았다." }] },
+            { id: 'ne39', title: "시험 출제 기간", desc: "교무실에 들어가고 싶은데 시험 기간이라 못 들어간다고 적혀 있다.", choices: [{ txt: "몰래 들어간다", res: "GOOD", reward: { type: 'UPGRADE_RANDOM', cost: 0 }, msg: "시험 정보를 엿봤다! (카드 1장 강화)" }, { txt: "돌아간다", res: "GOOD", reward: { type: 'HEAL', val: 0 }, msg: "양심을 지켰다." }] },
+            { id: 'ne40', title: "신준희의 교무실 투어", desc: "신준희가 교무실을 한번 구경하러 가자고 한다. 내가 왜?", choices: [{ txt: "따라간다", res: "GOOD", reward: { type: 'MAX_MANA', val: 1 }, msg: "선생님들의 간식을 얻어먹었다. 최대 정신력 +1" }, { txt: "거절한다", res: "GOOD", reward: { type: 'HEAL', val: 5 }, msg: "피곤하다. 쉬자." }] },
+        ];
+
+        const shuffle = (array) => array.sort(() => Math.random() - 0.5);
+
+        const getRandomCard = (activeSubjects, deck, rarityWeights, includeBasic = true, excludeNames = []) => {
+            const rand = Math.random() * 100;
+            let selectedRarity = 'COMMON';
+            if (rand < rarityWeights.COMMON) selectedRarity = 'COMMON';
+            else if (rand < rarityWeights.COMMON + rarityWeights.SPECIAL) selectedRarity = 'SPECIAL';
+            else if (rand < rarityWeights.COMMON + rarityWeights.SPECIAL + rarityWeights.RARE) selectedRarity = 'RARE';
+            else selectedRarity = 'LEGEND';
+
+            let pool = CARD_DATABASE.filter(c => {
+                const isSubjectMatch = (c.subject === 'BASIC' && includeBasic) || activeSubjects.includes(c.subject);
+                return isSubjectMatch && c.rarity === selectedRarity && !excludeNames.includes(c.name);
+            });
+            
+            if (selectedRarity === 'RARE' || selectedRarity === 'LEGEND') {
+                pool = pool.filter(c => {
+                if (c.subject === 'BASIC') return true;
+                return deck.some(dc => dc.subject === c.subject);
+                });
+                if (pool.length === 0) {
+                pool = CARD_DATABASE.filter(c => (c.subject === 'BASIC' || activeSubjects.includes(c.subject)) && c.rarity === 'SPECIAL' && !excludeNames.includes(c.name));
+                }
+            }
+
+            if (pool.length === 0) pool = CARD_DATABASE.filter(c => c.subject === 'BASIC' && c.rarity === 'COMMON' && !excludeNames.includes(c.name));
+            if (pool.length === 0) pool = CARD_DATABASE.filter(c => c.subject === 'BASIC');
+
+            const selected = pool[Math.floor(Math.random() * pool.length)];
+            return { ...selected, uid: Math.random().toString(36).substr(2, 9), upgrades: 0 };
+        };
+
+        const upgradeCard = (card, amount = 2) => {
+            if (card.type === 'SKILL') {
+                if ((card.upgrades || 0) >= 3) return card;
+                let newCost = card.cost;
+                let newDesc = card.desc;
+                let newExhaust = card.exhaust;
+                if (card.exhaust) {
+                    newExhaust = false;
+                    newDesc = newDesc.replace('(소멸)', '');
+                } else {
+                    newCost = Math.max(0, card.cost - 1);
+                }
+                return { ...card, cost: newCost, desc: newDesc, exhaust: newExhaust, upgrades: (card.upgrades || 0) + 1 };
+            }
+            if ((card.upgrades || 0) >= 10) return card;
+            return { ...card, val: (card.val || 0) + amount, upgrades: (card.upgrades || 0) + 1 };
+        };
+
+        const Card = ({ card, onClick, isSelected, gameStats }) => {
+            const subjectInfo = SUBJECTS[card.subject] || SUBJECTS.BASIC;
+            let actionEmoji = '⚔️';
+            if (card.type === 'DEFENSE') actionEmoji = '🛡️';
+            if (card.type === 'SKILL') actionEmoji = '🔮';
+
+            const calculateDynamicValue = () => {
+                if (card.type !== 'ATTACK' && card.type !== 'DEFENSE') return null;
+                
+                let val = card.val;
+                if (card.type === 'ATTACK') {
+                    if (card.name === '펜 찌르기' && gameStats?.hasPenRelic) val += 10;
+                    val += (gameStats?.strength || 0);
+                    let mult = (gameStats?.damageMultiplier || 1) * (gameStats?.nextAttackMult || 1);
+                    if (card.effect === 'LOW_HP_BONUS' && gameStats?.isLowHp) mult *= 2;
+                    val = Math.floor(val * mult);
+                }
+                return val;
+            };
+
+            const dynamicVal = calculateDynamicValue();
+            const showDynamic = dynamicVal !== null && dynamicVal !== card.val;
+
+            return (
+                <div 
+                    onClick={() => onClick && onClick(card)}
+                    className={`relative w-24 h-36 md:w-32 md:h-48 rounded-lg border-2 flex flex-col p-1 md:p-2 cursor-pointer transition-transform hover:scale-110 shadow-md select-none bg-white
+                    ${RARITY[card.rarity].color}
+                    ${isSelected ? 'ring-4 ring-red-500 -translate-y-4' : ''}
+                    ${card.exhaust ? 'card-exhaust' : ''}
+                    `}
+                >
+                    <div className="text-xs font-bold flex justify-between">
+                        <span className="font-extrabold">{subjectInfo.name}</span>
+                        <span className="bg-white/50 px-1 rounded">{card.cost} 코스트</span>
+                    </div>
+                    <div className="text-sm font-bold text-center mt-2 break-keep leading-tight text-black">
+                        {card.name} 
+                        {card.upgrades > 0 && <span className="text-red-500 text-xs ml-1">(+{card.upgrades})</span>}
+                    </div>
+                    <div className="flex-1 flex flex-col items-center justify-center gap-1 bg-white/20 rounded-lg my-1">
+                        <div className="flex gap-2 text-3xl">
+                            <span>{subjectInfo.emoji}</span>
+                            <span>{actionEmoji}</span>
+                        </div>
+                        {(card.type === 'ATTACK' || card.type === 'DEFENSE') && (
+                            <span className={`text-xl font-black drop-shadow-sm ${showDynamic ? 'text-green-600' : 'text-slate-800'}`}>
+                                {dynamicVal !== null ? dynamicVal : card.val}
+                            </span>
+                        )}
+                    </div>
+                    <div className="text-xs text-center bg-white/40 p-1 rounded min-h-[40px] flex items-center justify-center break-keep text-slate-900 leading-none">{card.desc}</div>
+                    <div className="absolute bottom-1 right-2 text-[10px] opacity-70 text-black font-bold">{RARITY[card.rarity].name}</div>
+                </div>
+            );
+        };
+
+        const SchoolAscent = () => {
+            const [gameState, setGameState] = useState('MENU');
+            const [hp, setHp] = useState(80);
+            const [maxHp, setMaxHp] = useState(80);
+            const [mental, setMental] = useState(5);
+            const [maxMental, setMaxMental] = useState(5);
+            const [gold, setGold] = useState(0);
+            const [deck, setDeck] = useState([]);
+            const [activeSubjects, setActiveSubjects] = useState([]);
+            const [selectedSubjects, setSelectedSubjects] = useState([]); 
+            const [artifacts, setArtifacts] = useState([]); 
+            const [bossPlan, setBossPlan] = useState({}); 
+
+            const [stage, setStage] = useState(1);
+            const [stageType, setStageType] = useState('NORMAL');
+            
+            const [hand, setHand] = useState([]);
+            const [drawPile, setDrawPile] = useState([]);
+            const [discardPile, setDiscardPile] = useState([]);
+            const [exhaustPile, setExhaustPile] = useState([]); 
+            const [turn, setTurn] = useState(1);
+            const [selectedCard, setSelectedCard] = useState(null);
+            const [playerBlock, setPlayerBlock] = useState(0);
+            const [lastCardSubject, setLastCardSubject] = useState(null);
+            const [mathComboCount, setMathComboCount] = useState(0);
+            
+            const [turnBlockBuff, setTurnBlockBuff] = useState(0);
+            const [persistentBlockBonus, setPersistentBlockBonus] = useState(0); 
+            const [damageMultiplier, setDamageMultiplier] = useState(1);
+            const [isImmune, setIsImmune] = useState(false);
+            const [playerStrength, setPlayerStrength] = useState(0); 
+            const [permStrength, setPermStrength] = useState(0);
+            const [nextAttackMult, setNextAttackMult] = useState(1); 
+            const [dodgeStacks, setDodgeStacks] = useState(0);
+
+            const [enemies, setEnemies] = useState([]);
+            const [combatLog, setCombatLog] = useState([]);
+
+            const [currentEvent, setCurrentEvent] = useState(null);
+            const [eventResult, setEventResult] = useState(null); 
+            const [encounteredEventIds, setEncounteredEventIds] = useState([]);
+            const [teacherEvent, setTeacherEvent] = useState(null); 
+            const [combatsSinceLastEvent, setCombatsSinceLastEvent] = useState(0); 
+
+            const [tempSelected, setTempSelected] = useState([]); 
+            const [shopCards, setShopCards] = useState([]);
+            const [rewardCards, setRewardCards] = useState([]); 
+            const [relicRewards, setRelicRewards] = useState([]); 
+            const [tempManaDebuff, setTempManaDebuff] = useState(0); 
+            const [rewardTeacher, setRewardTeacher] = useState(null);
+            const [shakeTarget, setShakeTarget] = useState(null); 
+            // [타격감 시스템] 데미지 폰트 및 피격 효과
+            const [dmgOverlays, setDmgOverlays] = useState([]); // { id, targetId, val, type }
+            const [redFlash, setRedFlash] = useState(false);
+            const [isPlayerStunned, setIsPlayerStunned] = useState(false); // 플레이어 기절 상태
+            
+            const [isGameCleared, setIsGameCleared] = useState(false); // 100층 클리어 여부 (2회차 해금용)
+
+            // 게임 시작 시 로컬 스토리지에서 클리어 기록 확인
+            useEffect(() => {
+                const cleared = localStorage.getItem('daesong_clear_status');
+                if (cleared === 'true') setIsGameCleared(true);
+            }, []);
+
+            const showDamage = (targetId, val) => {
+                let type = 'NORMAL';
+                if (val >= 45) type = 'SUPER';
+                else if (val >= 25) type = 'CRIT';
+                
+                const newOverlay = { id: Date.now() + Math.random(), targetId, val, type };
+                setDmgOverlays(prev => [...prev, newOverlay]);
+                
+                // 1초 뒤에 텍스트 사라짐 (메모리 정리)
+                setTimeout(() => {
+                    setDmgOverlays(prev => prev.filter(o => o.id !== newOverlay.id));
+                }, 1000);
+            };
+
+            // --- BGM Logic ---
+            const audioRef = useRef(null);
+            const [isMuted, setIsMuted] = useState(false);
+            const [highScores, setHighScores] = useState([]);
+            const [playerName, setPlayerName] = useState("");
+
+            // [수정] 실시간 랭킹 불러오기 (Firebase 서버 연동)
+            useEffect(() => {
+                if (gameState === 'RANKING' && db) {
+                    const unsubscribe = db.collection("leaderboard")
+                        .orderBy("score", "desc") // 점수 높은 순
+                        .limit(50) // 50명까지만
+                        .onSnapshot((snapshot) => {
+                            // 누군가 점수 등록하면 내 화면도 실시간으로 바뀝니다!
+                            const scores = snapshot.docs.map(doc => doc.data());
+                            setHighScores(scores.slice(0, 10)); // 화면엔 Top 10 표시
+                        }, (error) => {
+                            console.error("랭킹 로드 실패:", error);
+                        });
+                    return () => unsubscribe();
+                }
+            }, [gameState]);
+
+            // [수정] 랭킹 서버에 저장하기
+            const saveScore = () => {
+                if (!playerName.trim()) return;
+
+                // 점수 계산 로직 (V1.8 유지)
+                let finalScore = stage * 100 + hp * 10 + maxMental * 500 + gold - deck.length * 50;
+                if (stage >= 100) {
+                    finalScore += 10000;
+                    // 100층 클리어 시 내 컴퓨터에 '히든 해금' 도장 찍기
+                    localStorage.setItem('daesong_clear_status', 'true');
+                    setIsGameCleared(true);
+                }
+                finalScore = Math.max(0, finalScore);
+
+                // 서버로 전송
+                if (db) {
+                    db.collection("leaderboard").add({
+                        name: playerName,
+                        stage: stage,
+                        score: finalScore,
+                        date: new Date().toLocaleDateString(),
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    }).then(() => {
+                        alert("전설의 전당에 등록되었습니다!");
+                        playRetroSound('click');
+                        setGameState('RANKING');
+                    }).catch(err => alert("저장 실패: " + err));
+                } else {
+                    alert("서버와 연결되지 않았습니다.");
+                }
+            };
+
+            const copyScore = () => {
+                const text = `🏆 대송 등반 도전!\n${playerName || '이름없음'}님이 ${stage}교시까지 생존했습니다.\n#대송등반 #100교시의전설`;
+                navigator.clipboard.writeText(text).then(() => alert("성적표가 복사되었습니다! 친구들에게 공유하세요."));
+                playRetroSound('click');
+            };
+
+       // [최종] 드롭박스 전용 BGM 재생기 (BGM 끊김 방지 + 보스별 개별 BGM 적용됨)
+            useEffect(() => {
+                if (!audioRef.current) {
+                    audioRef.current = new Audio();
+                    audioRef.current.onerror = (e) => {
+                        console.error("🚫 재생 실패! 링크를 확인하세요:", audioRef.current.src);
+                    };
+                }
+                const audio = audioRef.current;
+                
+                let targetUrl = '';
+
+                // 1. 메뉴 및 엔딩 화면 (최우선 순위)
+                if (gameState === 'MENU' || gameState === 'SELECT_SUBJECTS' || gameState === 'RANKING') {
+                    targetUrl = BGM_IDS.MENU;
+                } 
+                else if (gameState === 'VICTORY') {
+                    targetUrl = BGM_IDS.VICTORY;
+                } 
+                else if (gameState === 'GAME_OVER') {
+                    targetUrl = BGM_IDS.GAMEOVER;
+                }
+                // 2. 보스전 (전투 중일 때만 개별 보스 음악 재생)
+                else if (gameState === 'COMBAT') {
+                    if (stage === 20) targetUrl = BGM_IDS.BOSS_20;
+                    else if (stage === 40) targetUrl = BGM_IDS.BOSS_40;
+                    else if (stage === 60) targetUrl = BGM_IDS.BOSS_60;
+                    else if (stage === 80) targetUrl = BGM_IDS.BOSS_80;
+                    else if (stage === 98) targetUrl = BGM_IDS.BOSS_98;
+                    else if (stage === 99) targetUrl = BGM_IDS.BOSS_99;
+                    else if (stage === 100) targetUrl = BGM_IDS.BOSS_FINAL;
+                    else {
+                        // 일반 전투 (1~50: Normal 1, 51~97: Normal 2)
+                        if (stage <= 50) targetUrl = BGM_IDS.NORMAL_1;
+                        else targetUrl = BGM_IDS.NORMAL_2;
+                    }
+                }
+                // 3. 비전투 구간 (상점, 이벤트, 급식 등) - 끊김 없이 일반 BGM 유지
+                else {
+                    if (stage <= 50) {
+                        targetUrl = BGM_IDS.NORMAL_1; 
+                    } else {
+                        targetUrl = BGM_IDS.NORMAL_2; 
+                    }
+                }
+
+                // 4. 음악 변경이 필요할 때만 재생
+                if (targetUrl && audio.src !== targetUrl) {
+                    console.log("🎵 음악 변경:", targetUrl);
+                    audio.src = targetUrl;
+                    audio.loop = (gameState !== 'VICTORY' && gameState !== 'GAME_OVER');
+                    audio.volume = 0.5;
+                    
+                    const playPromise = audio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(error => {
+                            console.warn("⚠️ 자동 재생 차단됨 (사용자 상호작용 필요)");
+                        });
+                    }
+                } else if (!targetUrl) {
+                    audio.pause();
+                }
+            }, [gameState, stageType, stage]);
+
+            const toggleMute = () => {
+                if (audioRef.current) {
+                    audioRef.current.muted = !audioRef.current.muted;
+                    setIsMuted(audioRef.current.muted);
+                }
+                playRetroSound('click');
+            };
+
+            const triggerShake = (target) => {
+                setShakeTarget(target);
+                setTimeout(() => setShakeTarget(null), 500);
+            };
+
+            const startGame = () => {
+                // Resume AudioContext if it was suspended (browser policy)
+                if (window.AudioContext || window.webkitAudioContext) {
+                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    if (ctx.state === 'suspended') ctx.resume();
+                }
+                playRetroSound('click');
+                setHp(80); setMaxHp(80); setMental(5); setMaxMental(5); setGold(100); setStage(1);
+                setArtifacts([]); setPermStrength(0); setDeck([]); setSelectedSubjects([]);
+                setEncounteredEventIds([]); setCombatsSinceLastEvent(0);
+                setGameState('SELECT_SUBJECTS'); 
+            };
+
+            const confirmSubjects = () => {
+                playRetroSound('click');
+                setActiveSubjects(selectedSubjects);
+                const basicAttacks = Array(3).fill(null).map(() => ({ ...CARD_DATABASE.find(c => c.name === '펜 찌르기'), uid: Math.random().toString(36).substr(2, 9), upgrades: 0 }));
+                const basicDefenses = Array(3).fill(null).map(() => ({ ...CARD_DATABASE.find(c => c.name === '교과서 방어'), uid: Math.random().toString(36).substr(2, 9), upgrades: 0 }));
+                const basicSpecial = [{ ...CARD_DATABASE.find(c => c.name === '필통 후려치기'), uid: Math.random().toString(36).substr(2, 9), upgrades: 0 }];
+                const initialDeck = [...basicAttacks, ...basicDefenses, ...basicSpecial];
+                setDeck(initialDeck);
+                const shuffledSubjects = shuffle([...selectedSubjects]);
+                const bossSchedule = { 20: shuffledSubjects[0], 40: shuffledSubjects[1], 60: shuffledSubjects[2], 80: [shuffledSubjects[3], shuffledSubjects[4]] };
+                setBossPlan(bossSchedule);
+                setGameState('MAP');
+                generateStage(1, selectedSubjects, initialDeck);
+            };
+
+            const generateStage = (stageNum, subjects = activeSubjects, currentDeck = deck, currentArtifacts = artifacts) => {
+                setStage(stageNum);
+                setTempSelected([]); 
+                if (stageNum > 1 && stageNum % 10 === 1) { startTeacherEvent(); return; }
+                let type = 'NORMAL';
+                if ([20, 40, 60, 80, 98, 99, 100].includes(stageNum)) type = 'BOSS';
+                else if (stageNum === 97) type = 'SHOP';
+                else if (stageNum % 20 === 10) type = 'DANGER'; 
+                else if (stageNum > 4 && stageNum % 10 === 5) type = 'LUNCH';
+                else if (stageNum > 4 && stageNum % 10 === 8) type = 'SHOP';
+                else {
+                    if (combatsSinceLastEvent > 0 && Math.random() < 0.35) type = 'EVENT';
+                    else if (combatsSinceLastEvent >= 2) type = 'EVENT';
+                    else type = 'NORMAL';
+                }
+                setStageType(type);
+                if (type === 'NORMAL' || type === 'DANGER' || type === 'BOSS') {
+                    setCombatsSinceLastEvent(prev => prev + 1); 
+                    startCombat(stageNum, type, currentDeck, currentArtifacts);
+                } else if (type === 'EVENT') {
+                    setCombatsSinceLastEvent(0); 
+                    startEvent();
+                } else if (type === 'SHOP') {
+                    startShop(subjects);
+                } else if (type === 'LUNCH') {
+                    setGameState('LUNCH');
+                }
+            };
+
+           const getBossIntent = (enemy, turnCount, stageNum) => {
+                // 100교시: 대기 삭제, 광역기 추가
+                if (stageNum === 100) {
+                    const cycle = turnCount % 4;
+                    if (cycle === 1) return 'IRON_WALL'; 
+                    if (cycle === 2) return 'MANA_BURN'; 
+                    if (cycle === 3) return 'MULTI_ATTACK'; // 연속 공격
+                    return 'BIG_ATTACK';
+                }
+                // 99교시: 교장 버프만 쓰는 버그 수정
+                if (stageNum === 99) {
+                    if (enemy.id === 1) { 
+                        const cycle = turnCount % 3;
+                        if (cycle === 1) return 'BUFF';
+                        if (cycle === 2) return 'BIG_ATTACK';
+                        return 'IRON_WALL';
+                    }
+                    return 'ATTACK';
+                }
+                // 98교시: 공격 빈도 상향
+                if (stageNum === 98) {
+                    if (turnCount % 3 === 0) return 'BIG_ATTACK'; 
+                    return 'ATTACK'; 
+                }
+                
+                const subj = enemy.subject;
+                if (!subj) return 'ATTACK'; 
+
+                // 수학: 3턴 주기로 너프
+                if (subj === 'MATH') {
+                    const cycle = turnCount % 3;
+                    if (cycle === 1) return 'BUFF';
+                    if (cycle === 2) return 'ATTACK';
+                    return 'BIG_ATTACK';
+                }
+                // 체육: 3턴 주기로 너프
+                if (subj === 'PE') {
+                    const cycle = turnCount % 3;
+                    if (cycle === 1) return 'ATTACK';
+                    if (cycle === 2) return 'BUFF';
+                    return 'BIG_ATTACK';
+                }
+                // 과학: 폭발 공격 추가 (상향)
+                if (subj === 'SCIENCE') {
+                    const cycle = turnCount % 3;
+                    if (cycle === 1) return 'DEBUFF';
+                    if (cycle === 2) return 'ATTACK';
+                    return 'BIG_ATTACK';
+                }
+                // 사회: 2연타 공격 추가 (상향)
+                if (subj === 'SOCIAL') {
+                    const cycle = turnCount % 3;
+                    if (cycle === 1) return 'SUPER_DEFEND';
+                    if (cycle === 2) return 'BUFF';
+                    return 'MULTI_ATTACK';
+                }
+                // 음악/미술: 기절 공격 추가 (변수 창출)
+                if (subj === 'MUSIC' || subj === 'ART') {
+                    const rand = Math.random();
+                    if (rand < 0.3) return 'STUN_ATTACK';
+                    if (rand < 0.6) return 'DEBUFF';
+                    return 'MULTI_ATTACK';
+                }
+                // 역사: 유지
+                if (subj === 'HISTORY') {
+                    if (enemy.hp < enemy.maxHp * 0.4) return 'HEAL';
+                    return 'MULTI_ATTACK';
+                }
+
+                if (Math.random() < 0.3) return 'BUFF';
+                return 'ATTACK';
+            };
+
+            const startCombat = (stg, type, currentDeck, currentArtifacts = artifacts) => {
+                setGameState('COMBAT');
+                setTurn(1);
+                
+                // 유물 효과: 시작 마나
+                const startManaRelic = currentArtifacts.find(r => r.effect === 'START_MANA');
+                setMental(maxMental - tempManaDebuff + (startManaRelic ? startManaRelic.val : 0)); 
+                setTempManaDebuff(0); 
+                
+                // 유물 효과: 시작 방어도
+                const startBlockRelic = currentArtifacts.find(r => r.effect === 'START_BLOCK');
+                setPlayerBlock(startBlockRelic ? startBlockRelic.val : 0);
+                
+                setTurnBlockBuff(0);
+                setPersistentBlockBonus(0); 
+                setDamageMultiplier(1);
+                setIsImmune(false);
+                setIsPlayerStunned(false); // [필수] 기절 초기화
+                
+                // [신규] 유물 효과: 선도부 명찰 (시작 힘)
+                const startStrengthRelic = currentArtifacts.find(r => r.effect === 'START_STRENGTH');
+                setPlayerStrength(permStrength + (startStrengthRelic ? startStrengthRelic.val : 0)); 
+                
+                setNextAttackMult(1);
+                setDodgeStacks(0);
+                setDrawPile(shuffle([...(currentDeck && currentDeck.length > 0 ? currentDeck : deck)]));
+                setHand([]); setDiscardPile([]); setExhaustPile([]);
+                setCombatLog(["전투 시작!"]);
+                setLastCardSubject(null);
+                setMathComboCount(0);
+                
+                let newEnemies = [];
+                let difficultyMult = stg <= 10 ? 0.5 + (stg * 0.02) : 0.8 + ((stg - 10) * 0.025);
+                
+                // 보스 및 적 생성 로직 (기존과 동일)
+                if (type === 'BOSS') {
+                    if (stg === 100) newEnemies.push({ id: 0, name: '천창수 교육감', emoji: '👑', maxHp: 2000, hp: 2000, dmg: 35, block: 0, status: {}, intent: 'ATTACK' });
+                    else if (stg === 99) { 
+                        newEnemies.push({ id: 0, name: '교감 선생님', emoji: '🧐', maxHp: 800, hp: 800, dmg: 25, block: 0, status: {}, intent: 'ATTACK' }); 
+                        newEnemies.push({ id: 1, name: '교장 선생님', emoji: '🥸', maxHp: 1000, hp: 1000, dmg: 22, block: 0, status: {}, intent: 'BUFF' }); 
+                    }
+                    else if (stg === 98) newEnemies.push({ id: 0, name: '학년부장 염정현', emoji: '👨‍🏫', subject: 'ENGLISH', maxHp: 500, hp: 500, dmg: 18, block: 0, status: {}, intent: 'DEFEND' });
+                    else if (stg === 80) { bossPlan[80].forEach((subjKey, idx) => { const info = SUBJECTS[subjKey]; newEnemies.push({ id: idx, name: `${info.teacher} 선생님`, emoji: info.teacherEmoji, subject: subjKey, maxHp: Math.floor(180 * difficultyMult), hp: Math.floor(180 * difficultyMult), dmg: Math.floor(10 * difficultyMult), block: 0, status: {}, intent: 'ATTACK' }); }); }
+                    else { const subjKey = bossPlan[stg]; const info = SUBJECTS[subjKey]; newEnemies.push({ id: 0, name: `${info.teacher} 선생님`, emoji: info.teacherEmoji, subject: subjKey, maxHp: Math.floor(200 * difficultyMult), hp: Math.floor(200 * difficultyMult), dmg: Math.floor(12 * difficultyMult), block: 0, status: {}, intent: 'ATTACK' }); }
+                } else {
+                    const enemyPool = Math.random() < 0.5 ? ENEMIES.IN_SCHOOL : ENEMIES.OUT_SCHOOL;
+                    const count = (Math.random() > 0.7) ? 1 : Math.floor(Math.random() * 2) + 1;
+                    for(let i=0; i<count; i++) {
+                        const template = enemyPool[Math.floor(Math.random() * enemyPool.length)];
+                        const maxH = Math.floor(template.hp * difficultyMult * (type==='DANGER' ? 1.5 : 1));
+                        newEnemies.push({ id: i, name: template.name + (type==='DANGER' ? ' (위험)' : ''), emoji: template.emoji, maxHp: maxH, hp: maxH, dmg: Math.max(1, Math.floor(template.dmg * difficultyMult)), block: 0, intent: 'ATTACK', status: {} });
+                    }
+                }
+                const startWeakRelic = currentArtifacts.find(r => r.effect === 'START_WEAK');
+                if (startWeakRelic) newEnemies = newEnemies.map(e => ({...e, status: {...e.status, weak: startWeakRelic.val}}));
+                setEnemies(newEnemies);
+                setTimeout(() => drawCards(5, shuffle([...(currentDeck || deck)]), [], 0), 100);
+            };
+
+            const drawCards = (count, currentDraw, currentDiscard, currentHandSize) => {
+                let newDraw = [...currentDraw];
+                let newDiscard = [...currentDiscard];
+                let drawn = [];
+                for(let i=0; i<count; i++) {
+                    if (newDraw.length === 0) {
+                        if (newDiscard.length === 0) break;
+                        newDraw = shuffle(newDiscard);
+                        newDiscard = [];
+                    }
+                    drawn.push(newDraw.pop());
+                }
+                setDrawPile(newDraw);
+                setDiscardPile(newDiscard);
+                setHand(prev => [...prev, ...drawn]);
+            };
+
+            const playCard = (card, targetId) => {
+                // [안전장치] 기절 상태면 카드 사용 불가
+                if (isPlayerStunned) {
+                    setCombatLog(prev => ["💫 기절 상태입니다! 이번 턴은 쉴 수밖에 없습니다.", ...prev]);
+                    triggerShake('player');
+                    return;
+                }
+
+                // 1. 코스트 및 타겟 확인
+                if (mental < card.cost) { setCombatLog(prev => [`🚫 정신력이 부족합니다!`, ...prev]); triggerShake('player'); return; }
+                
+                const needsTarget = (card.type === 'ATTACK' || ['STUN', 'POISON', 'WEAK', 'DISPEL', 'VULNERABLE'].some(e => card.effect?.includes(e))) && !['AOE_ATTACK', 'AOE_STUN_ATTACK', 'AOE_DMG_POISON'].includes(card.effect);
+                
+                if (needsTarget && targetId === null) { setCombatLog(prev => [`🎯 대상을 선택해주세요.`, ...prev]); return; }
+                
+                // 2. 자원 소모 및 카드 제출
+                setMental(prev => prev - card.cost);
+                setHand(prev => prev.filter(c => c.uid !== card.uid));
+                
+                // 카드 성장(Scaling) 처리 (다음 사용을 위해 강화)
+                let processedCard = { ...card };
+                if (card.effect === 'SCALING_ON_USE') { 
+                    processedCard.val += card.effectVal; 
+                    setCombatLog(prev => [`📈 ${card.name} 숙련도 증가! (${processedCard.val})`, ...prev]); 
+                }
+
+                if (processedCard.exhaust) setExhaustPile(prev => [...prev, processedCard]); else setDiscardPile(prev => [...prev, processedCard]);
+                setSelectedCard(null);
+
+                // ================================================================
+                // 🛠️ [핵심 수정] 데미지 통합 계산 로직 (순서 보장)
+                // ================================================================
+                
+                // (1) 기본 데미지 설정 (강화된 수치 card.val 반영)
+                let baseDmg = card.val || 0; 
+
+                // 특수 공식 적용
+                if (card.effect === 'MATH_MULTIPLY') { // 미적분: 고정값 15 대신 card.val 사용 (강화 적용됨)
+                    baseDmg = baseDmg * Math.pow(2, mathComboCount);
+                } else if (card.effect === 'MANA_BURN_ATTACK') { // 스크래치 아트
+                    baseDmg = mental * 15; // (주의: mental 차감은 뒤에서 처리)
+                } else if (card.effect === 'BODY_SLAM') { // 본문 해석
+                    baseDmg = playerBlock;
+                }
+
+                // (2) 조건부 보너스 합산
+                if (card.name === '펜 찌르기' && artifacts.some(r => r.effect === 'PEN_BUFF')) baseDmg += 10;
+                if (card.subject === 'MATH' && card.effect === 'MATH_COMBO' && lastCardSubject === 'MATH') baseDmg += card.effectVal; // 피타고라스
+
+                // '진심 펀치' : 힘을 얻고 때리는 경우, 이번 공격에 힘 미리 적용
+                let tempStrength = 0;
+                if (card.effect === 'STRENGTH_ATTACK') tempStrength = card.effectVal;
+
+                // (3) 최종 데미지 확정 (힘 & 버프 & 배율 적용)
+                let finalDmg = 0;
+                
+                // 공격 카드 판별 (ATTACK 타입이거나, 데미지를 주는 SKILL 카드 포함)
+                const isDamageCard = card.type === 'ATTACK' || 
+                                     ['AOE_STUN_ATTACK', 'AOE_DMG_POISON', 'MANA_BURN_ATTACK', 'BODY_SLAM'].includes(card.effect);
+
+                if (isDamageCard) {
+                    // 힘 적용 (스크래치 아트 등 특수 공격에도 힘이 실리도록 변경)
+                    let strengthBonus = playerStrength + tempStrength;
+                    
+                    // 데미지 공식: (기본뎀 + 힘) * 배율
+                    finalDmg = Math.floor((baseDmg + strengthBonus) * damageMultiplier * nextAttackMult);
+                    
+                    // 체력 50% 이하 2배 (강 스파이크)
+                    if (card.effect === 'LOW_HP_BONUS' && hp <= maxHp * 0.5) finalDmg *= 2;
+                }
+                
+                // 다음 공격 2배 버프 소모
+                if (isDamageCard || card.type === 'ATTACK') setNextAttackMult(1); 
+
+                // 수학 콤보 카운트 업데이트
+                if (card.subject === 'MATH') {
+                    if (card.effect === 'MATH_COST_REDUCE') setHand(prev => prev.map(c => c.subject === 'MATH' ? {...c, cost: Math.max(0, c.cost - 1)} : c));
+                    setMathComboCount(prev => prev + 1);
+                } else setMathComboCount(0);
+
+                // ================================================================
+                // 3. 각종 이펙트 실행
+                // ================================================================
+
+                if (card.selfDamage) { setHp(prev => Math.max(0, prev - card.selfDamage)); triggerShake('player'); }
+                
+                if (card.effect === 'MANA_BURN_ATTACK') { setMental(0); setCombatLog(prev => [`🔥 정신력 폭발! ${finalDmg} 피해!`, ...prev]); } 
+                
+                if (card.effect === 'BUFF_BLOCK') { setPersistentBlockBonus(prev => prev + card.effectVal); setCombatLog(prev => [`🛡️ 매 턴 방어도 +${card.effectVal} 증가!`, ...prev]); }
+                if (card.effect === 'STRENGTH' || card.effect === 'STRENGTH_ATTACK') setPlayerStrength(prev => prev + (card.effectVal || 2));
+                if (card.effect === 'HEAL') { setHp(prev => Math.min(maxHp, prev + card.effectVal)); playRetroSound('heal'); }
+                if (card.effect === 'RECOVER_MANA') { setMental(prev => Math.min(maxMental, prev + card.effectVal)); playRetroSound('heal'); }
+                if (card.effect === 'RECOVER_MANA_FULL') setMental(maxMental);
+                if (card.effect === 'FULL_HEAL') { setHp(maxHp); playRetroSound('heal'); }
+                if (card.effect === 'DRAW') drawCards(card.effectVal, drawPile, discardPile, hand.length);
+                if (card.effect === 'NEXT_ATTACK_DOUBLE') setNextAttackMult(2);
+                if (card.effect === 'DOUBLE_DMG') { setDamageMultiplier(2); setCombatLog(prev => ["💪 이번 턴 공격력 2배!", ...prev]); }
+                if (card.effect === 'IMMUNE_ONCE') setIsImmune(true);
+                if (card.effect === 'DODGE') setDodgeStacks(prev => prev + (card.effectVal || 1));
+                if (card.effect === 'ATTACK_BLOCK') setPlayerBlock(prev => prev + 10);
+                if (card.type === 'DEFENSE') setPlayerBlock(prev => prev + card.val);
+                if (card.effect === 'BLOCK_MULTIPLY') setPlayerBlock(prev => prev * (card.effectVal || 3));
+                
+                if (card.effect === 'GAMBLE_MANA') {
+                    if (Math.random() < 0.5) { setMental(prev => Math.min(maxMental, prev + 2)); setCombatLog(prev => ["🎲 도박 성공! 정신력 +2", ...prev]); } 
+                    else { setHp(prev => Math.max(0, prev - 5)); triggerShake('player'); setCombatLog(prev => ["🎲 도박 실패... 체력 -5", ...prev]); }
+                }
+
+                // [추가] 상장 수여 (데미지 3배 버프)
+                if (card.effect === 'NEXT_ATTACK_TRIPLE') {
+                    setNextAttackMult(3);
+                    setCombatLog(prev => ["📜 위엄있는 상장 수여! 다음 공격 3배!", ...prev]);
+                }
+                
+                // [추가] 훈화 말씀 (데미지 없이 전체 기절)
+                if (card.effect === 'AOE_STUN_ONLY') {
+                     enemies.forEach(e => {
+                        setEnemies(prev => prev.map(en => en.id === e.id ? { ...en, status: { ...en.status, stun: true }, intent: 'STUNNED' } : en));
+                     });
+                     setCombatLog(prev => ["🗣️ 훈화 말씀이 너무 길어 적들이 기절했습니다...", ...prev]);
+                }
+
+                if (card.effect === 'HEAL_DRAW') { setHp(prev => Math.min(maxHp, prev + card.effectVal)); drawCards(card.drawVal, drawPile, discardPile, hand.length); playRetroSound('heal'); }
+                if (card.effect === 'VULNERABLE_DRAW') { drawCards(1, drawPile, discardPile, hand.length); } 
+                if (card.effect === 'MANA_DRAW') { setMental(prev => Math.min(maxMental, prev + card.effectVal)); drawCards(1, drawPile, discardPile, hand.length); }
+                if (card.effect === 'MANA_BURN_STRENGTH') { const gain = mental * 2; setPlayerStrength(prev => prev + gain); setMental(0); setCombatLog(prev => [`💪 정신력 연소! 힘 +${gain}`, ...prev]); }
+                if (card.effect === 'BLOCK_DRAW') { drawCards(card.drawVal, drawPile, discardPile, hand.length); } 
+                if (card.effect === 'DODGE_DRAW') { setDodgeStacks(prev => prev + 1); drawCards(card.drawVal, drawPile, discardPile, hand.length); }
+
+                if (card.effect === 'COPY_ATTACK_FROM_DECK' || card.effect === 'DUPLICATE_ATTACK') {
+                    const pool = [...drawPile, ...discardPile].filter(c => c.type === 'ATTACK');
+                    if (pool.length > 0) {
+                        const newCard = {...pool[Math.floor(Math.random() * pool.length)], uid: Math.random().toString(36).substr(2, 9)};
+                        setHand(prev => [...prev, newCard]);
+                        setCombatLog(prev => [`📝 ${newCard.name} 복사됨!`, ...prev]);
+                    }
+                }
+                if (card.effect === 'UPGRADE_HAND') setHand(prev => prev.map(c => upgradeCard(c, card.effectVal || 1)));
+                if (card.effect === 'COST_DOWN_HAND') setHand(prev => prev.map(c => ({...c, cost: Math.max(0, c.cost - 1)})));
+                if (card.effect === 'UPGRADE_DECK_TOP' || card.effect === 'ATTACK_UPGRADE_DECK') {
+                    setDrawPile(prev => { if (prev.length === 0) return prev; const newPile = [...prev]; const idx = newPile.length - 1; newPile[idx] = upgradeCard(newPile[idx]); return newPile; });
+                }
+                
+                // 4. 공격 실행 (계산된 finalDmg 사용)
+                const applyHit = (eId, dmg, effects={}) => {
+                    setEnemies(prev => prev.map(e => {
+                        if (e.id !== eId) return e;
+                        
+                        let take = dmg;
+                        if (e.status.vulnerable > 0 && take > 0) take = Math.floor(take * 1.5);
+                        
+                        if (e.block > 0) { 
+                            if (e.block >= take) { e.block -= take; take = 0; } 
+                            else { take -= e.block; e.block = 0; } 
+                        }
+                        
+                        let newStatus = {...e.status};
+                        if (effects.stun) { newStatus.stun = true; setCombatLog(prev => [`💫 ${e.name} 기절!`, ...prev]); }
+                        if (effects.poison) newStatus.poison = (newStatus.poison || 0) + effects.poison;
+                        if (effects.weak) newStatus.weak = (newStatus.weak || 0) + effects.weak;
+                        if (effects.vulnerable) newStatus.vulnerable = (newStatus.vulnerable || 0) + effects.vulnerable;
+                        if (card.effect === 'DISPEL') { newStatus.strength = 0; newStatus.poison = 0; setCombatLog(prev => [`✨ ${e.name} 버프 해제!`, ...prev]); }
+                        if (card.effect === 'DOUBLE_POISON') newStatus.poison = (newStatus.poison || 0) * 2;
+
+                        if (take > 0) { 
+                            playRetroSound('hit'); 
+                            triggerShake(e.id); 
+                            showDamage(e.id, take); 
+                            setCombatLog(prev => [`⚔️ ${e.name}에게 ${take} 피해!`, ...prev]); 
+                        }
+                        
+                        return { ...e, hp: Math.max(0, e.hp - take), status: newStatus, intent: newStatus.stun ? 'STUNNED' : e.intent };
+                    }));
+                };
+
+                const isVulnerableEffect = card.effect === 'VULNERABLE' || card.effect === 'VULNERABLE_ATTACK' || card.effect === 'VULNERABLE_DRAW';
+                const vulVal = card.effectVal || 1;
+                let shouldStun = card.effect?.includes('STUN') && !card.effect.includes('CHANCE'); 
+                if (card.effect === 'CHANCE_STUN') { if (Math.random() * 100 < card.effectVal) { shouldStun = true; } }
+
+                if (needsTarget) applyHit(targetId, finalDmg, { stun: shouldStun, poison: card.effect?.includes('POISON')?card.effectVal:0, weak: card.effect?.includes('WEAK')?card.effectVal:0, vulnerable: isVulnerableEffect ? vulVal : 0 });
+                else if (card.effect?.includes('AOE') || card.effect === 'AOE_DMG_POISON') enemies.forEach(e => applyHit(e.id, finalDmg, { stun: shouldStun, poison: card.effect==='AOE_DMG_POISON'?3:0 }));
+                else if (card.effect === 'HEAL_POISON_ALL') { setHp(prev=>Math.min(maxHp, prev+10)); enemies.forEach(e => applyHit(e.id, 0, { poison: card.effectVal })); }
+                
+                if (card.id === 'k5') drawCards(2, drawPile, discardPile, hand.length);
+                setLastCardSubject(card.subject);
+            };
+
+            const endTurn = () => {
+                setDiscardPile(prev => [...prev, ...hand]); setHand([]);
+                
+                // [안전장치] 턴 종료 시 이번 턴 기절 해제 (다음 턴엔 행동 가능)
+                setIsPlayerStunned(false);
+
+                let incomingDmg = 0;
+                let manaDebuff = 0;
+                let willStunPlayer = false; // 이번 턴에 플레이어가 기절하는지?
+                
+                enemies.forEach(e => {
+                    if (e.hp > 0 && !e.status.stun) {
+                        // [수정] MULTI_ATTACK(연속 공격), STUN_ATTACK(기절) 패턴 처리
+                        if (['ATTACK', 'BIG_ATTACK', 'MULTI_ATTACK', 'POISON_ATTACK', 'ATTACK_BUFF', 'STUN_ATTACK'].includes(e.intent)) {
+                            let dmg = e.dmg + (e.status.strength||0);
+                            if (e.status.weak > 0) dmg = Math.floor(dmg * 0.5);
+                            
+                            // 보스별 패턴 데미지 배율
+                            if (e.intent === 'BIG_ATTACK') dmg = Math.floor(dmg * 2.5);
+                            if (e.intent === 'MULTI_ATTACK') dmg *= 2; // 연속 공격은 2배 데미지 (표현상 2연타)
+                            
+                            incomingDmg += Math.max(0, dmg);
+
+                            // 기절 공격인지 확인
+                            if (e.intent === 'STUN_ATTACK') willStunPlayer = true;
+                        }
+                        if (e.intent === 'DEBUFF' && !artifacts.some(r=>r.effect==='DEBUFF_IMMUNE')) manaDebuff++;
+                        if (e.intent === 'MANA_BURN' && !artifacts.some(r=>r.effect==='DEBUFF_IMMUNE')) manaDebuff += 2;
+                    }
+                });
+
+                let currentBlock = playerBlock + turnBlockBuff;
+                let damageTaken = 0;
+
+                if (!isImmune && incomingDmg > 0) {
+                    if (dodgeStacks > 0) {
+                        setDodgeStacks(prev => prev - 1);
+                        setCombatLog(prev => ["💨 회피 성공!", ...prev]);
+                        willStunPlayer = false; // 회피하면 기절도 피함
+                    } else {
+                        if (currentBlock >= incomingDmg) { 
+                            currentBlock -= incomingDmg; 
+                            willStunPlayer = false; // [선택] 방어로 완전히 막으면 기절 면역
+                        } else { 
+                            damageTaken = incomingDmg - currentBlock; 
+                            currentBlock = 0; 
+                        }
+                    }
+                }
+
+                if (damageTaken > 0) { 
+                    playRetroSound('hit'); 
+                    setHp(prev => Math.max(0, prev - damageTaken)); 
+                    triggerShake('player');
+                    showDamage('player', damageTaken); 
+                    
+                    if (damageTaken >= 40) {
+                        setRedFlash(true);
+                        setTimeout(() => setRedFlash(false), 500);
+                    }
+                    
+                    // 데미지를 입었고, 기절 공격이었다면 -> 기절 상태 부여
+                    if (willStunPlayer) {
+                        setIsPlayerStunned(true);
+                        setCombatLog(prev => ["💫 윽! 강력한 충격에 기절했습니다!", ...prev]);
+                    } else {
+                        setCombatLog(prev => [`💔 ${damageTaken} 피해를 입었습니다!`, ...prev]); 
+                    }
+                }
+
+                if (!artifacts.some(r => r.effect === 'BLOCK_RETAIN')) setPlayerBlock(0);
+                else setPlayerBlock(currentBlock);
+
+                // 적 상태 업데이트 (방어도 초기화 포함)
+                setEnemies(prev => prev.map(e => {
+                    let nextHp = e.hp;
+                    if (e.status.poison) { nextHp -= e.status.poison; setCombatLog(prev => [`🤢 ${e.name} 독 피해 ${e.status.poison}`, ...prev]); }
+                    
+                    let nextBlock = 0; // 턴 종료 시 적 방어도 초기화
+                    
+                    if (e.intent === 'DEFEND') nextBlock += 15;
+                    if (e.intent === 'SUPER_DEFEND') { nextBlock += 40; setCombatLog(prev => [`🛡️ ${e.name}의 철벽 방어! (+40)`, ...prev]); }
+                    if (e.intent === 'IRON_WALL') { nextBlock += 999; setCombatLog(prev => [`🏰 ${e.name}이(가) 절대 방어 태세를 취합니다.`, ...prev]); }
+                    if (e.intent === 'HEAL') { const healAmt = Math.floor(e.maxHp * 0.15); nextHp = Math.min(e.maxHp, nextHp + healAmt); setCombatLog(prev => [`💖 ${e.name}이(가) 체력을 ${healAmt} 회복했습니다.`, ...prev]); }
+                    if (e.intent === 'MANA_BURN') { setCombatLog(prev => [`🧠 ${e.name}의 훈화 말씀.. 머리가 아픕니다. (다음 턴 정신력 -2)`, ...prev]); }
+                    
+                    let nextStatus = { ...e.status, stun: false, weak: Math.max(0, (e.status.weak||0)-1), vulnerable: Math.max(0, (e.status.vulnerable||0)-1) };
+                    if (e.intent === 'BUFF') nextStatus.strength = (nextStatus.strength||0) + 1;
+
+                    // 98층 보스 강화
+                    if (stage === 98) {
+                        nextStatus.strength = (nextStatus.strength || 0) + 2;
+                        setCombatLog(prev => [`🔥 ${e.name}의 압박감이 심해집니다! (힘 +2)`, ...prev]);
+                    }
+
+                    let nextIntent = e.intent; 
+                    if (nextHp > 0) {
+                         if (stageType === 'BOSS') nextIntent = getBossIntent(e, turn + 1, stage);
+                         else {
+                            const rand = Math.random();
+                            if (rand < 0.7) nextIntent = 'ATTACK';
+                            else if (rand < 0.9) nextIntent = 'DEFEND';
+                            else nextIntent = 'BUFF';
+                         }
+                    }
+                    return { ...e, hp: nextHp, block: nextBlock, status: nextStatus, intent: nextIntent };
+                }));
+
+                setMental(Math.max(0, maxMental - manaDebuff));
+                setTurn(prev => prev + 1);
+                setIsImmune(false);
+                setNextAttackMult(1);
+                setDamageMultiplier(1); 
+                
+                if (persistentBlockBonus > 0) { setPlayerBlock(prev => prev + persistentBlockBonus); setCombatLog(prev => [`🛡️ 턴 시작 방어도 +${persistentBlockBonus}`, ...prev]); }
+                let drawCount = 3 + (artifacts.find(r => r.effect === 'DRAW_PLUS') ? 1 : 0);
+                setDodgeStacks(prev => Math.max(0, prev - 1));
+                setTimeout(() => drawCards(drawCount, drawPile, [...discardPile, ...hand], 0), 200);
+            };
+
+            useEffect(() => {
+                if (gameState === 'COMBAT') {
+                    const alive = enemies.filter(e => e.hp > 0);
+                    if (alive.length === 0 && enemies.length > 0) { endCombat(true); } else if (hp <= 0) { endCombat(false); }
+                }
+            }, [enemies, hp, gameState]);
+
+            const endCombat = (isVictory) => {
+                if (!isVictory) { setGameState('GAME_OVER'); return; }
+                if (stage >= 100) { setGameState('VICTORY'); return; }
+                const healRelic = artifacts.find(r => r.effect === 'POST_COMBAT_HEAL');
+                if (healRelic) setHp(prev => Math.min(maxHp, prev + healRelic.val));
+                let goldReward = Math.floor(400 + Math.random() * 300) + (stageType === 'BOSS' ? 300 : 0);
+                setGold(prev => prev + goldReward);
+                setCombatLog([]);
+                if (stageType === 'BOSS' && [20, 40, 60, 80].includes(stage)) {
+                    setRelicRewards(shuffle(RELICS.filter(r => !artifacts.some(a => a.id === r.id))).slice(0, 2));
+                    setGameState('RELIC_REWARD');
+                } else {
+                    const rewards = [];
+                    while(rewards.length < 3) rewards.push(getRandomCard(activeSubjects, deck, { COMMON: 60, SPECIAL: 25, RARE: 10, LEGEND: 5 }, false));
+                    setRewardCards(rewards);
+                    setRewardTeacher(SUBJECTS[activeSubjects[Math.floor(Math.random() * activeSubjects.length)]]);
+                    setGameState('REWARD');
+                }
+            };
+
+            const startEvent = () => {
+                setGameState('EVENT');
+                const available = EVENTS.filter(e => !encounteredEventIds.includes(e.id));
+                const evt = available.length > 0 ? available[Math.floor(Math.random()*available.length)] : EVENTS[Math.floor(Math.random()*EVENTS.length)];
+                setCurrentEvent(evt);
+                if(available.length > 0) setEncounteredEventIds(prev => [...prev, evt.id]);
+                setEventResult(null);
+            };
+
+            const startShop = (subjects) => {
+                setGameState('SHOP');
+                setTempSelected([]);
+                const cards = [
+                    getRandomCard(subjects, deck, { COMMON: 60, SPECIAL: 30, RARE: 10, LEGEND: 0 }),
+                    getRandomCard(subjects, deck, { COMMON: 40, SPECIAL: 40, RARE: 20, LEGEND: 0 }),
+                    getRandomCard(subjects, deck, { COMMON: 20, SPECIAL: 40, RARE: 30, LEGEND: 10 })
+                ].map(c => ({...c, price: RARITY[c.rarity].price}));
+                setShopCards(cards);
+            };
+
+            const startTeacherEvent = () => {
+                setGameState('TEACHER_EVENT');
+                const s = activeSubjects[Math.floor(Math.random() * activeSubjects.length)];
+                setTeacherEvent({ ...SUBJECTS[s] });
+                setTempSelected([]);
+            };
+
+            const handleTeacherChoice = (choice) => {
+                setTempSelected([]);
+                playRetroSound('click');
+                if (choice === 'REMOVE') setGameState('TEACHER_REMOVE');
+                else if (choice === 'COPY') setGameState('TEACHER_COPY');
+                else if (choice === 'UPGRADE') setGameState('TEACHER_UPGRADE');
+            };
+
+            const toggleCardSelection = (index, maxSelect) => {
+                playRetroSound('click');
+                if (tempSelected.includes(index)) setTempSelected(prev => prev.filter(i => i !== index));
+                else if (tempSelected.length < maxSelect) setTempSelected(prev => [...prev, index]);
+            };
+
+            const confirmSelectionAction = () => {
+                playRetroSound('click');
+                let newDeck = [...deck];
+                if (gameState === 'TEACHER_REMOVE' || gameState === 'SHOP_REMOVE') {
+                    const sortedIndices = [...tempSelected].sort((a, b) => b - a);
+                    sortedIndices.forEach(idx => newDeck.splice(idx, 1));
+                    setDeck(newDeck);
+                    if (gameState === 'SHOP_REMOVE') { setGold(prev => prev - 2000); setGameState('SHOP'); }
+                    else { setGameState('MAP'); generateStage(stage + 1); }
+                }
+                else if (gameState === 'TEACHER_COPY') {
+                    tempSelected.forEach(idx => newDeck.push({ ...newDeck[idx], uid: Math.random().toString(36).substr(2, 9) }));
+                    setDeck(newDeck); setGameState('MAP'); generateStage(stage + 1);
+                }
+                else if (gameState === 'TEACHER_UPGRADE' || gameState === 'LUNCH_UPGRADE') {
+                    tempSelected.forEach(idx => { newDeck[idx] = upgradeCard(newDeck[idx], 2); });
+                    setDeck(newDeck); setGameState('MAP'); generateStage(stage + 1);
+                }
+                setTempSelected([]);
+            };
+
+            const gameStats = {
+                strength: playerStrength,
+                hasPenRelic: artifacts.some(r => r.effect === 'PEN_BUFF'),
+                damageMultiplier,
+                nextAttackMult,
+                isLowHp: hp <= maxHp * 0.5
+            };
+
+            return (
+                <div id="game-container" className="font-sans select-none text-white relative">
+                    <div className="absolute top-4 right-4 z-50 flex gap-2">
+                        <button onClick={toggleMute} className="bg-slate-700 p-2 rounded-full hover:bg-slate-600 transition shadow">
+                            {isMuted ? <Icon name="VolumeX" size={24}/> : <Icon name="Volume2" size={24}/>}
+                        </button>
+                    </div>
+
+                    {gameState === 'MENU' && (
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 animate-fade-in absolute inset-0 z-50">
+                            <div className="text-9xl mb-8 animate-bounce">🏫</div>
+                            <h1 className="text-6xl font-black mb-4 text-yellow-400 drop-shadow-lg">대송 등반</h1>
+                            <p className="text-2xl mb-8 text-slate-300">100교시의 전설 v2.1</p>
+                            <div className="flex gap-4">
+                                <button onClick={startGame} className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-12 rounded-xl text-xl shadow-xl transition transform hover:scale-105">등교하기 (시작)</button>
+                                <button onClick={() => setGameState('RANKING')} className="bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-4 px-12 rounded-xl text-xl shadow-xl transition transform hover:scale-105 flex items-center gap-2"><Icon name="Trophy" /> 명예의 전당</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {gameState === 'RANKING' && (
+                        <div className="w-full h-full bg-slate-900 flex flex-col items-center justify-center p-8 animate-fade-in absolute inset-0 z-50">
+                            <h2 className="text-4xl font-bold mb-8 text-yellow-400 flex items-center gap-3"><Icon name="Trophy" size={40}/> 명예의 전당 (Top 10)</h2>
+                            <div className="bg-slate-800 p-8 rounded-xl w-full max-w-4xl shadow-2xl border border-slate-600">
+                                {highScores.length > 0 ? (
+                                   <table className="w-full text-left rank-table">
+                                        <thead>
+                                            <tr>
+                                                <th>순위</th>
+                                                <th>이름</th>
+                                                <th>최종 학력</th> {/* 도달 교시 -> 최종 학력으로 변경 */}
+                                                <th>졸업 점수</th> {/* 컬럼 추가 */}
+                                                <th>날짜</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {highScores.map((s, i) => (
+                                                <tr key={i} className={i===0?'text-yellow-300 font-bold':''}>
+                                                    <td>{i+1}위</td>
+                                                    <td>{s.name}</td>
+                                                    <td>{s.stage}교시</td>
+                                                    <td className="text-green-400 font-mono">
+                                                        {/* 점수가 있으면 콤마(,) 찍어서 표시, 없으면 0점 */}
+                                                        {(s.score || 0).toLocaleString()}점
+                                                    </td>
+                                                    <td>{s.date}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                ) : <div className="text-center text-slate-400 py-12">아직 등록된 전설이 없습니다. 도전하세요!</div>}
+                            </div>
+                            <button onClick={() => setGameState('MENU')} className="mt-8 bg-slate-600 hover:bg-slate-500 px-8 py-3 rounded-xl text-lg font-bold">뒤로 가기</button>
+                        </div>
+                    )}
+
+                    {gameState === 'SELECT_SUBJECTS' && (
+                        /* [패드 최적화] overflow-hidden으로 스크롤 제거, 화면 꽉 채움 */
+                        <div className="w-full h-full bg-slate-800 flex flex-col items-center p-2 absolute inset-0 z-50 overflow-hidden">
+                            <div className="w-full max-w-6xl flex flex-col items-center h-full justify-center">
+                                
+                                {/* 1. 제목 영역 (여백 최소화) */}
+                                <div className="shrink-0 text-center mb-2">
+                                    <h2 className="text-3xl font-bold text-white">이번 학기 수강 신청</h2>
+                                    <p className="text-slate-400 text-sm">5개의 과목을 선택하세요 ({selectedSubjects.length}/5)</p>
+                                </div>
+                                
+                                {/* 2. 과목 선택 영역 (flex-1로 남은 공간 차지) */}
+                                <div className="flex-1 flex flex-col items-center justify-center w-full gap-2">
+                                    
+                                    {/* A. 일반 과목 (카드 크기와 간격을 줄여서 빽빽하게 배치) */}
+                                    <div className="flex flex-wrap gap-2 justify-center w-full">
+                                        {Object.values(SUBJECTS).filter(s => s.id !== 'BASIC' && s.id !== 'ADMIN').map((subj) => (
+                                            <div key={subj.id} onClick={() => {
+                                                playRetroSound('click');
+                                                if (selectedSubjects.includes(subj.id)) setSelectedSubjects(prev => prev.filter(id => id !== subj.id));
+                                                else if (selectedSubjects.length < 5) setSelectedSubjects(prev => [...prev, subj.id]);
+                                            }} className={`w-28 sm:w-36 p-2 rounded-xl border-2 cursor-pointer transition-all flex flex-col items-center gap-1 
+                                                ${selectedSubjects.includes(subj.id) 
+                                                    ? 'bg-blue-600 border-blue-300 transform scale-105 shadow-lg' 
+                                                    : 'bg-slate-700 border-slate-600 hover:bg-slate-600'
+                                                } opacity-90 hover:opacity-100`}>
+                                                <div className="text-3xl">{subj.emoji}</div>
+                                                <div className="font-bold text-base whitespace-nowrap">{subj.name}</div>
+                                                {/* 설명은 공간 절약을 위해 아주 작게 표시 */}
+                                                <div className="text-[10px] text-center break-keep opacity-80 leading-tight hidden sm:block">{subj.desc}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* B. 구분선 */}
+                                    <div className="w-16 h-1 bg-slate-700 rounded-full shrink-0 my-1"></div>
+
+                                    {/* C. 히든/특별 과목 (하단 중앙 배치) */}
+                                    <div className="flex justify-center shrink-0">
+                                        {(() => {
+                                            const subj = SUBJECTS['ADMIN'];
+                                            if (!subj) return null;
+
+                                            // 잠김 상태 (패드용 컴팩트 사이즈)
+                                            if (!isGameCleared) {
+                                                return (
+                                                    <div className="w-56 p-2 rounded-xl border-2 border-slate-700 bg-slate-800/50 flex flex-col items-center gap-1 grayscale cursor-not-allowed">
+                                                        <div className="text-3xl animate-pulse">🔒</div>
+                                                        <div className="font-bold text-base text-slate-500">???</div>
+                                                        <div className="text-[10px] text-center text-slate-600">전설적인 졸업생 전용</div>
+                                                    </div>
+                                                );
+                                            }
+
+                                            // 해금 상태 (화려하지만 높이는 줄임)
+                                            return (
+                                                <div onClick={() => {
+                                                    playRetroSound('click');
+                                                    if (selectedSubjects.includes(subj.id)) setSelectedSubjects(prev => prev.filter(id => id !== subj.id));
+                                                    else if (selectedSubjects.length < 5) setSelectedSubjects(prev => [...prev, subj.id]);
+                                                }} className={`w-64 p-3 rounded-xl border-4 cursor-pointer transition-all flex flex-row items-center justify-center gap-4 relative overflow-hidden group
+                                                    ${selectedSubjects.includes(subj.id) 
+                                                        ? 'bg-yellow-700 border-yellow-300 shadow-2xl scale-105 ring-2 ring-yellow-500/50' 
+                                                        : 'bg-slate-800 border-yellow-600/50 hover:bg-slate-700 hover:border-yellow-500'
+                                                    }`}>
+                                                    <div className="absolute inset-0 bg-yellow-500/10 group-hover:bg-yellow-500/20 transition-colors"></div>
+                                                    <div className="text-4xl drop-shadow-md z-10">{subj.emoji}</div>
+                                                    <div className="flex flex-col z-10">
+                                                        <div className="font-black text-xl text-yellow-400">{subj.name}</div>
+                                                        <div className="text-[10px] text-yellow-100/80 leading-tight">교장 선생님의 권한 대행</div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
+                                </div>
+                                
+                                {/* 3. 수업 시작 버튼 (하단 고정) */}
+                                <div className="shrink-0 mt-2 mb-2">
+                                    <button onClick={confirmSubjects} disabled={selectedSubjects.length !== 5} className={`font-bold py-3 px-12 rounded-xl text-xl transition shadow-xl ${selectedSubjects.length === 5 ? 'bg-green-600 hover:bg-green-500 text-white cursor-pointer transform hover:scale-105' : 'bg-slate-600 text-slate-400 cursor-not-allowed'}`}>수업 시작</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {!['MENU', 'SELECT_SUBJECTS', 'RANKING'].includes(gameState) && (
+                        <div className="w-full h-full flex flex-col relative">
+                            <div className="bg-slate-800 p-3 flex justify-between items-center shadow-lg z-10 border-b border-slate-700">
+                                <div className="flex gap-6 items-center">
+                                    <div className="font-black text-xl flex items-center gap-2"><div className="w-8 h-8 rounded bg-yellow-500 text-black flex items-center justify-center">{stage}</div> 교시</div>
+                                    <div className="flex gap-4 text-sm font-bold text-slate-300">
+                                        <span className="flex items-center gap-1 text-red-400"><Icon name="Heart" size={16}/> {hp}/{maxHp}</span>
+                                        <span className="flex items-center gap-1 text-blue-400"><Icon name="Brain" size={16}/> {mental}/{maxMental}</span>
+                                        <span className="flex items-center gap-1 text-yellow-400"><Icon name="Coins" size={16}/> {gold}</span>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    {activeSubjects.map(s => <span key={s} title={SUBJECTS[s].name} className="text-xl cursor-help">{SUBJECTS[s].emoji}</span>)}
+                                </div>
+                            </div>
+
+                            <div className="flex-1 relative bg-[url('https://www.transparenttextures.com/patterns/blackboard.png')] bg-green-900/90 bg-blend-multiply overflow-hidden flex flex-col">
+                                {gameState === 'COMBAT' && (
+                                    <div className="flex-1 flex flex-col relative">
+                                        <div className="flex-1 flex px-8 pb-32 items-center">
+                                           {/* [수정됨] 플레이어 초상화 영역 시작 */}
+                                            <div className="w-1/3 flex flex-col items-center justify-center border-r border-white/10 h-full relative">
+                                                {/* 1. flash-red 클래스 조건부 추가됨 */}
+                                                <div className={`flex flex-col items-center ${shakeTarget === 'player' ? 'hit-effect' : ''} ${redFlash ? 'flash-red rounded-xl p-2' : ''}`}>
+                                                    <div className="text-8xl mb-4 relative drop-shadow-2xl">
+                                                        🧑‍🎓
+                                                        {playerBlock > 0 && <div className="absolute -top-2 -right-6 bg-blue-600 text-white px-3 py-1 rounded-full text-lg font-bold border-2 border-blue-300 flex items-center shadow-lg animate-bounce"><Icon name="Shield" size={18} className="mr-1"/> {playerBlock}</div>}
+                                                        {dodgeStacks > 0 && <div className="absolute top-0 -left-8 bg-green-600 text-white px-2 py-1 rounded-full text-sm font-bold border border-green-400 flex items-center shadow-lg"><Icon name="Wind" size={16} className="mr-1"/> {dodgeStacks}</div>}
+                                                        
+                                                        {isPlayerStunned && <div className="absolute top-0 right-0 text-4xl animate-spin">💫</div>}
+                                                        {/* 2. [추가됨] 플레이어 데미지 숫자 표시 */}
+                                                        {dmgOverlays.filter(o => o.targetId === 'player').map(o => (
+                                                            <div key={o.id} className={`dmg-num ${o.type === 'SUPER' ? 'dmg-super' : o.type === 'CRIT' ? 'dmg-crit' : 'dmg-normal'}`}>-{o.val}</div>
+                                                        ))}
+                                                    </div>
+                                                    <div className="w-48 bg-slate-900 h-4 rounded-full overflow-hidden border border-slate-500 relative mb-2">
+                                                        <div className="bg-green-500 h-full transition-all duration-300" style={{width: `${(hp/maxHp)*100}%`}}></div>
+                                                        <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow">{hp} / {maxHp}</div>
+                                                    </div>
+                                                    <div className="flex gap-2 text-sm font-bold opacity-90 bg-black/30 px-3 py-1 rounded-full">
+                                                        {playerStrength > 0 && <span className="text-red-300">힘 {playerStrength}</span>}
+                                                        {permStrength > 0 && <span className="text-amber-300">(영구+{permStrength})</span>}
+                                                        <span className="text-blue-300 flex items-center gap-1 ml-2"><Icon name="Brain" size={14}/> {mental}/{maxMental}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {/* [수정됨] 플레이어 초상화 영역 끝 */}
+                                            <div className="w-2/3 flex justify-center items-center gap-8 pl-8 flex-wrap content-center h-full">
+                                                {enemies.filter(e => e.hp > 0).map(e => (
+                                                    <div key={e.id} onClick={() => selectedCard && playCard(selectedCard, e.id)} className={`relative group cursor-pointer transition-all ${shakeTarget === e.id ? 'hit-effect' : ''} hover:scale-105`}>
+                                                        
+                                                        {/* [추가] 적 데미지 오버레이 (여기 추가됨!) */}
+                                                        {dmgOverlays.filter(o => o.targetId === e.id).map(o => (
+                                                            <div key={o.id} className={`dmg-num ${o.type === 'SUPER' ? 'dmg-super' : o.type === 'CRIT' ? 'dmg-crit' : 'dmg-normal'}`}>{o.val}</div>
+                                                        ))}
+
+                                                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white text-black px-3 py-1 rounded-full font-bold shadow-lg flex items-center gap-1 z-10 whitespace-nowrap border-2 border-slate-300">
+                                                            {e.intent.includes('ATTACK') && <><Icon name="Zap" size={16} className="text-red-600 fill-current"/> {Math.floor((e.dmg + (e.status.strength||0)) * (e.status.weak ? 0.5 : 1) * (e.intent==='BIG_ATTACK'?2.5:1) * (e.intent==='MULTI_ATTACK'?2:1))}</>}
+                                                            {e.intent === 'DEFEND' && <Icon name="Shield" size={16} className="text-blue-600"/>}
+                                                            {e.intent === 'SUPER_DEFEND' && <div className="flex items-center text-blue-800"><Icon name="Shield" size={16} className="fill-current"/>+</div>}
+                                                            {e.intent === 'IRON_WALL' && <Icon name="Shield" size={16} className="text-yellow-600 fill-current"/>}
+                                                            {e.intent === 'HEAL' && <Icon name="Heart" size={16} className="text-pink-600 fill-current"/>}
+                                                            {(e.intent === 'BUFF' || e.intent === 'WAIT') && <Icon name="ArrowUp" size={16} className="text-green-600"/>}
+                                                            {(e.intent === 'DEBUFF' || e.intent === 'MANA_BURN') && <Icon name="Brain" size={16} className="text-purple-600"/>}
+                                                            {e.intent === 'STUNNED' && '💫'}
+                                                        </div>
+                                                        <div className="w-32 h-32 bg-slate-700/80 rounded-xl border-4 border-slate-500 flex items-center justify-center text-6xl shadow-xl">
+                                                            {e.emoji}
+                                                            {e.block > 0 && <div className="absolute top-0 right-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-bl-lg font-bold border-l border-b border-blue-300"><Icon name="Shield" size={12} className="inline"/> {e.block}</div>}
+                                                        </div>
+                                                        <div className="mt-2 w-full bg-slate-800 h-3 rounded-full overflow-hidden relative border border-slate-600">
+                                                            <div className="bg-red-500 h-full transition-all duration-300" style={{width: `${(e.hp/e.maxHp)*100}%`}}></div>
+                                                        </div>
+                                                        <div className="text-center font-bold text-sm mt-1 text-white drop-shadow-md bg-black/30 rounded px-1">{e.name} ({e.hp})</div>
+                                                        <div className="flex justify-center gap-1 mt-1 text-xs">
+                                                            {e.status.poison > 0 && <span className="text-green-400 bg-black/50 px-1 rounded">독{e.status.poison}</span>}
+                                                            {e.status.stun && <span className="text-yellow-400 bg-black/50 px-1 rounded">기절</span>}
+                                                            {e.status.weak > 0 && <span className="text-gray-400 bg-black/50 px-1 rounded">약화{e.status.weak}</span>}
+                                                            {e.status.vulnerable > 0 && <span className="text-red-400 bg-black/50 px-1 rounded">💔{e.status.vulnerable}</span>}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        {/* [수정] 하단 패널 높이 자동 조절 및 패딩 축소 */}
+                                        <div className="absolute bottom-0 w-full h-auto bg-gradient-to-t from-black/90 via-black/70 to-transparent pt-8 pb-2 md:pt-12 md:pb-4 flex flex-col justify-end items-center z-20">
+                                            
+                                            {/* 전투 로그 위치 조정 */}
+                                            <div className="absolute -top-8 w-full text-center pointer-events-none">
+                                                {combatLog[0] && <span className="bg-black/60 px-4 py-1 rounded-full text-yellow-300 font-bold animate-pulse text-sm md:text-lg border border-yellow-500/30">{combatLog[0]}</span>}
+                                            </div>
+
+                                            <div className="flex items-end justify-center gap-2 md:gap-6 w-full max-w-6xl px-2 md:px-4">
+                                                {/* 덱(남은 카드) - 모바일에선 숨김 */}
+                                                <div className="relative group hidden sm:block"> 
+                                                    <div className="w-16 h-24 md:w-20 md:h-28 bg-slate-700 rounded border-2 border-slate-500 flex items-center justify-center font-bold text-slate-400 text-lg shadow-lg">{drawPile.length}</div>
+                                                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-xs text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100">남은 카드</div>
+                                                </div>
+
+                                                {/* 손패 영역 (높이 및 간격 최적화) */}
+                                                <div className="flex justify-center -space-x-2 md:-space-x-4 pb-1 min-h-[150px] md:min-h-[200px] px-1 md:px-4 flex-1 max-w-4xl overflow-visible">
+                                                    {hand.map((card, i) => (
+                                                        <div key={card.uid} className="transition-all hover:-translate-y-12 hover:scale-110 hover:z-50 origin-bottom duration-200" style={{zIndex: i}}>
+                                                            <Card 
+                                                                card={card} 
+                                                                isSelected={selectedCard?.uid === card.uid} 
+                                                                gameStats={gameStats}
+                                                                onClick={(c) => {
+                                                                    const needsTarget = (card.type === 'ATTACK' || ['STUN', 'POISON', 'WEAK', 'DISPEL', 'VULNERABLE'].some(e => card.effect?.includes(e))) && !['AOE_ATTACK', 'AOE_STUN_ATTACK', 'AOE_DMG_POISON', 'AOE_STUN_ONLY'].includes(card.effect);
+                                                                    if (!needsTarget) playCard(c, null);
+                                                                    else setSelectedCard(selectedCard?.uid === c.uid ? null : c);
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+
+                                                {/* 턴 종료 버튼 및 버린 카드 */}
+                                                <div className="flex flex-col gap-2 items-center pb-2">
+                                                    <button onClick={endTurn} className="bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 px-4 md:py-4 md:px-8 rounded-xl shadow-lg border-b-4 border-amber-800 active:border-b-0 active:translate-y-1 transition-all text-sm md:text-lg whitespace-nowrap">턴 종료</button>
+                                                    <div className="relative group hidden sm:block">
+                                                        <div className="w-16 h-24 md:w-20 md:h-28 bg-slate-700 rounded border-2 border-slate-500 flex items-center justify-center font-bold text-slate-400 text-lg shadow-lg">{discardPile.length}</div>
+                                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-xs text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100">버린 카드</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {gameState === 'REWARD' && (
+                                    <div className="flex-1 flex flex-col items-center justify-center p-4 animate-fade-in bg-black/80 z-30">
+                                        {rewardTeacher && (
+                                            <div className="flex flex-col items-center mb-8 animate-bounce">
+                                                <div className="text-8xl mb-2">{rewardTeacher.teacherEmoji}</div>
+                                                <div className="bg-white text-black p-4 rounded-xl relative bubble font-bold">"{rewardTeacher.teacher} 선생님이 칭찬합니다! 참 잘했어요."</div>
+                                            </div>
+                                        )}
+                                        <h2 className="text-4xl font-bold mb-8 text-yellow-400">수업 종료! 보상 선택</h2>
+                                        <div className="flex gap-6 mb-8">{rewardCards.map((c, i) => (<div key={i} className="hover:scale-110 transition-transform"><Card card={c} onClick={() => { setDeck([...deck, c]); setGameState('MAP'); generateStage(stage+1); }} /></div>))}</div>
+                                        <button onClick={() => { setGameState('MAP'); generateStage(stage+1); }} className="text-slate-400 hover:text-white underline">건너뛰기</button>
+                                    </div>
+                                )}
+
+                                {gameState === 'RELIC_REWARD' && (
+                                    <div className="flex-1 flex flex-col items-center justify-center p-4 animate-fade-in bg-black/80 z-30">
+                                        <h2 className="text-4xl font-bold mb-8 text-amber-400">🏆 중간고사 통과! 유물 선택</h2>
+                                        <div className="flex gap-8 mb-8">
+                                            {relicRewards.map((relic, i) => (
+                                                <div key={i} onClick={() => { 
+                                                    const newArtifacts = [...artifacts, relic]; setArtifacts(newArtifacts); 
+                                                    if (relic.effect === 'MAX_HP') { setMaxHp(prev => prev + relic.val); setHp(prev => prev + relic.val); }
+                                                    if (relic.effect === 'MAX_MANA') { setMaxMental(prev => prev + relic.val); setMental(prev => prev + relic.val); }
+                                                    setGameState('MAP'); generateStage(stage + 1, activeSubjects, deck, newArtifacts); 
+                                                }} className="bg-slate-700 p-8 rounded-xl border-2 border-amber-400 cursor-pointer hover:scale-105 transition-transform w-64 flex flex-col items-center gap-4 shadow-xl">
+                                                    <div className="text-6xl">{relic.emoji}</div><div className="font-bold text-xl text-amber-300">{relic.name}</div><div className="text-sm text-slate-300 text-center break-keep">{relic.desc}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {gameState === 'EVENT' && currentEvent && (
+                                    <div className="flex-1 flex items-center justify-center p-4 z-30 bg-black/70">
+                                        <div className="bg-slate-800 p-8 rounded-xl max-w-2xl w-full text-center border border-slate-600 shadow-2xl animate-fade-in">
+                                            <h2 className="text-3xl font-bold mb-4 text-yellow-400">{currentEvent.title}</h2>
+                                            <p className="text-lg mb-8 whitespace-pre-line text-slate-300">{currentEvent.desc}</p>
+                                            {!eventResult ? (
+                                                <div className="grid gap-4">
+                                                    {currentEvent.choices.map((c, i) => (
+                                                        <button key={i} onClick={() => {
+                                                            const { type, val, cost } = c.reward;
+                                                            let msg = c.msg;
+                                                            if (type === 'GOLD') setGold(prev => prev + val);
+                                                            else if (type === 'HP_LOSS') setHp(prev => Math.max(0, prev - val));
+                                                            else if (type === 'HEAL') setHp(prev => Math.min(maxHp, prev + val));
+                                                            else if (type === 'MAX_MANA') setMaxMental(prev => prev + val);
+                                                            else if (type === 'MAX_HP') setMaxHp(prev => prev + val);
+                                                            else if (type === 'PERM_STRENGTH') setPermStrength(prev => prev + val);
+                                                            else if (type === 'TRADE_HP_MAXHP') { setHp(prev => prev - cost); setMaxHp(prev => prev + val); }
+                                                            else if (type === 'UPGRADE_RANDOM') setDeck(prev => { const d=[...prev]; const idx=Math.floor(Math.random()*d.length); if(d[idx]) d[idx]=upgradeCard(d[idx]); return d; });
+                                                            else if (type === 'GET_RARE_CARD') setDeck(prev => [...prev, getRandomCard(activeSubjects, deck, {COMMON:0, SPECIAL:0, RARE:100, LEGEND:0})]);
+                                                            else if (type === 'YJH_GACHA') {
+                                                                const r = Math.random();
+                                                                if (r < 0.33) { const card = getRandomCard(activeSubjects, deck, {COMMON:0, SPECIAL:100, RARE:0, LEGEND:0}); setDeck(prev => [...prev, card]); msg = `🎉 대박! [${card.name}] 획득!`; }
+                                                                else if (r < 0.66) { setMaxMental(prev => prev + 1); setMental(prev => prev + 1); msg = "✨ 머리가 맑아졌다! 정신력 +1"; }
+                                                                else { setHp(prev => Math.min(maxHp, prev + 30)); msg = "🍎 든든하다! 체력 30 회복"; }
+                                                            }
+                                                            setEventResult(msg);
+                                                        }} className="bg-slate-700 hover:bg-slate-600 p-4 rounded text-left font-bold transition flex justify-between border border-slate-500"><span>{i+1}. {c.txt}</span><span className="text-xs text-slate-400">선택</span></button>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div><div className="bg-black/30 p-4 rounded mb-6 text-green-400 font-bold">{eventResult}</div><button onClick={() => { setGameState('MAP'); generateStage(stage + 1); setEventResult(null); }} className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold">다음으로</button></div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                                
+                              {gameState === 'SHOP' && (
+                                    /* [수정] z-index 높임(z-30) 및 하단 여백(pb-40) 대폭 추가하여 잘림 방지 */
+                                    <div className="flex-1 overflow-y-auto p-8 relative bg-slate-900/95 z-30">
+                                        <div className="flex justify-between items-center mb-8 border-b border-slate-700 pb-4">
+                                            <h2 className="text-3xl md:text-4xl font-bold text-white flex items-center gap-3"><Icon name="ShoppingCart" size={40}/> 매점</h2>
+                                            <div className="text-xl md:text-2xl text-yellow-400 font-bold flex items-center gap-2"><Icon name="Coins"/> {gold}원</div>
+                                        </div>
+                                        <div className="flex flex-col items-center gap-12 pb-40"> {/* pb-40으로 하단 공간 넉넉하게 확보 */}
+                                            <div className="flex flex-col md:flex-row gap-8 items-center bg-slate-800 p-6 rounded-xl border border-slate-600 w-full max-w-4xl justify-between">
+                                                <div className="flex items-center gap-4"><span className="text-5xl">🥐</span><div className="text-left"><div className="font-bold text-xl text-amber-200">매점 빵</div><div className="text-sm text-slate-400">체력을 30 회복합니다.</div></div></div>
+                                                <button onClick={() => { if(gold>=500){setGold(g=>g-500); setHp(h=>Math.min(maxHp, h+30));} }} disabled={gold<500} className={`px-6 py-3 rounded-lg font-bold whitespace-nowrap ${gold>=500?'bg-green-600 hover:bg-green-500':'bg-slate-600 text-slate-400'}`}>500원 구매</button>
+                                            </div>
+                                            
+                                            <div className="flex gap-4 md:gap-8 flex-wrap justify-center">
+                                                {shopCards.map((card, i) => ( card ? (
+                                                    <div key={i} className="flex flex-col items-center gap-2">
+                                                        <Card card={card} />
+                                                        <button onClick={() => { if (gold >= card.price) { setGold(prev => prev - card.price); setDeck(prev => [...prev, card]); let newShop = [...shopCards]; newShop[i] = null; setShopCards(newShop); } }} disabled={gold < card.price} className={`px-4 py-2 rounded-full font-bold text-sm ${gold >= card.price ? 'bg-yellow-500 text-black hover:bg-yellow-400' : 'bg-slate-600 text-slate-400'}`}>{card.price}원</button>
+                                                    </div>
+                                                ) : <div key={i} className="w-32 h-48 border-2 border-dashed border-slate-600 rounded flex items-center justify-center text-slate-500">품절</div> ))}
+                                            </div>
+                                            
+                                            <div className="w-full max-w-4xl bg-red-900/20 p-6 rounded-xl border border-red-500/30 flex flex-col md:flex-row justify-between items-center gap-4">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="text-4xl text-red-400"><Icon name="Trash2" /></div>
+                                                    <div className="text-left">
+                                                        <div className="font-bold text-xl text-red-200">중고 서적 판매 (카드 제거)</div>
+                                                        <div className="text-sm text-red-300/70">덱에서 카드를 1장 제거합니다.</div>
+                                                    </div>
+                                                </div>
+                                                <button onClick={() => { if(gold>=2000) { setGameState('SHOP_REMOVE'); setTempSelected([]); } }} disabled={gold<2000} className={`px-6 py-3 rounded-lg font-bold whitespace-nowrap ${gold>=2000?'bg-red-600 hover:bg-red-500':'bg-slate-600 text-slate-400'}`}>2000원</button>
+                                            </div>
+                                            
+                                            <button onClick={() => { setGameState('MAP'); generateStage(stage + 1); }} className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-16 rounded-full text-xl flex items-center gap-3 shadow-xl mt-8">교실로 돌아가기 <Icon name="ArrowRight" /></button>
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {gameState === 'LUNCH' && (
+                                    <div className="flex-1 flex items-center justify-center p-4 bg-black/80 z-30">
+                                        <div className="bg-slate-800 p-8 rounded-xl max-w-3xl w-full text-center border-2 border-green-600 shadow-2xl">
+                                            <div className="text-6xl mb-4">🍱</div>
+                                            <h2 className="text-3xl font-bold text-white mb-4">급식 시간</h2>
+                                            <p className="text-lg text-slate-300 mb-8">맛있는 급식이 나왔습니다.</p>
+                                            <div className="flex gap-8 justify-center">
+                                                <button onClick={() => { setHp(Math.min(maxHp, hp + 30)); setGameState('MAP'); generateStage(stage + 1); }} className="flex-1 bg-green-700 p-8 rounded-xl hover:bg-green-600 transition shadow-lg group"><div className="text-4xl mb-4 group-hover:scale-110 transition-transform">😋</div><div className="font-bold text-xl mb-2">맛있게 먹기</div><div className="text-green-200">체력 30 회복</div></button>
+                                                <button onClick={() => { setGameState('LUNCH_UPGRADE'); setTempSelected([]); }} className="flex-1 bg-red-700 p-8 rounded-xl hover:bg-red-600 transition shadow-lg group">
+                                                    <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">🤬</div>
+                                                    <div className="font-bold text-xl mb-2">반찬 투정</div>
+                                                    <div className="text-red-200">카드 2장 강화</div>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {gameState === 'TEACHER_EVENT' && teacherEvent && (
+                                    <div className="flex-1 flex items-center justify-center p-4 bg-black/80 z-30">
+                                        <div className="bg-slate-800 p-8 rounded-xl max-w-xl w-full text-center border-2 border-blue-500 shadow-2xl">
+                                            <div className="text-6xl mb-4">{teacherEvent.teacherEmoji}</div>
+                                            <h2 className="text-2xl font-bold mb-2">{teacherEvent.teacher} 선생님의 상담</h2>
+                                            <div className="flex gap-4 justify-center mt-8">
+                                                <button onClick={() => handleTeacherChoice('REMOVE')} className="bg-red-600 hover:bg-red-500 p-4 rounded-lg flex-1 transition transform hover:scale-105"><div className="text-2xl">🗑️</div><div className="font-bold">카드 제거</div></button>
+                                                <button onClick={() => handleTeacherChoice('COPY')} className="bg-blue-600 hover:bg-blue-500 p-4 rounded-lg flex-1 transition transform hover:scale-105"><div className="text-2xl">📝</div><div className="font-bold">카드 복사</div></button>
+                                                <button onClick={() => handleTeacherChoice('UPGRADE')} className="bg-green-600 hover:bg-green-500 p-4 rounded-lg flex-1 transition transform hover:scale-105"><div className="text-2xl">🔨</div><div className="font-bold">카드 강화</div></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {['TEACHER_REMOVE', 'TEACHER_COPY', 'TEACHER_UPGRADE', 'LUNCH_UPGRADE', 'SHOP_REMOVE'].includes(gameState) && (
+                                    <div className="flex-1 overflow-y-auto p-8 relative bg-slate-900/95 z-20">
+                                        <h2 className="text-3xl font-bold text-center mb-4 text-white">
+                                            {gameState === 'TEACHER_REMOVE' && '제거할 카드 선택 (1장)'}
+                                            {gameState === 'SHOP_REMOVE' && '제거할 카드 선택 (비용: 2000원)'}
+                                            {gameState === 'TEACHER_COPY' && '복사할 카드 선택 (1장)'}
+                                            {gameState === 'TEACHER_UPGRADE' && '강화할 카드 선택 (1장)'}
+                                            {gameState === 'LUNCH_UPGRADE' && '강화할 카드 선택 (2장)'}
+                                        </h2>
+                                        <div className="text-center mb-8 text-slate-400">
+                                            선택됨: {tempSelected.length} / {(gameState === 'LUNCH_UPGRADE') ? 2 : 1}
+                                        </div>
+                                        <div className="flex flex-wrap gap-4 justify-center pb-24">
+                                            {deck.map((card, i) => (
+                                                <div key={i} onClick={() => toggleCardSelection(i, (gameState === 'LUNCH_UPGRADE' ? 2 : 1))} className={`cursor-pointer transform transition-all ${tempSelected.includes(i) ? 'scale-110 ring-4 ring-yellow-400 rounded-lg z-10' : 'hover:scale-105 opacity-80 hover:opacity-100'}`}>
+                                                    <Card card={card}/>
+                                                    {tempSelected.includes(i) && <div className="absolute top-2 right-2 bg-yellow-400 text-black rounded-full p-1"><Icon name="CheckCircle" size={20}/></div>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="fixed bottom-8 left-0 w-full flex justify-center gap-4 z-50">
+                                            <button onClick={() => { setGameState(gameState.startsWith('SHOP') ? 'SHOP' : gameState.startsWith('LUNCH') ? 'LUNCH' : 'MAP'); if(!gameState.startsWith('SHOP') && !gameState.startsWith('LUNCH')) generateStage(stage+1); }} className="bg-slate-600 hover:bg-slate-500 px-8 py-3 rounded-xl font-bold shadow-lg">취소/건너뛰기</button>
+                                            <button 
+                                                onClick={confirmSelectionAction} 
+                                                disabled={tempSelected.length === 0}
+                                                className={`px-8 py-3 rounded-xl font-bold shadow-lg text-xl ${tempSelected.length > 0 ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}
+                                            >
+                                                확인 ({tempSelected.length})
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {(gameState === 'GAME_OVER' || gameState === 'VICTORY') && (
+                                    <div className="absolute inset-0 bg-black/95 flex flex-col items-center justify-center z-50">
+                                        <h1 className={`text-6xl font-black mb-4 ${gameState==='VICTORY'?'text-green-500':'text-red-500'}`}>{gameState === 'VICTORY' ? '🏆 전설적인 졸업생' : '💀 유급되었습니다...'}</h1>
+                                        {gameState === 'VICTORY' && <div className="text-4xl mb-4">🎓 졸업을 축하합니다! 🎓</div>}
+                                        {gameState === 'GAME_OVER' && <div className="text-2xl mb-4 text-slate-300">안타깝게도 진급에 실패했습니다...</div>}
+                                        <p className="text-2xl text-white mb-8">{stage}교시까지 생존</p>
+                                        {/* [추가] 상세 성적표 표시 */}
+                                        <div className="bg-slate-800/80 p-6 rounded-xl border border-slate-600 mb-8 text-left w-full max-w-sm">
+                                            <div className="flex justify-between text-slate-300 mb-1"><span>기본 점수 ({stage}교시)</span><span>+{stage * 100}</span></div>
+                                            <div className="flex justify-between text-red-300 mb-1"><span>건강 점수 (HP {hp})</span><span>+{hp * 10}</span></div>
+                                            <div className="flex justify-between text-blue-300 mb-1"><span>멘탈 점수 (최대 {maxMental})</span><span>+{maxMental * 500}</span></div>
+                                            <div className="flex justify-between text-yellow-300 mb-1"><span>경제 점수 ({gold}원)</span><span>+{gold}</span></div>
+                                            <div className="flex justify-between text-slate-400 mb-1"><span>덱 압축 감점 ({deck.length}장)</span><span>-{deck.length * 50}</span></div>
+                                            {stage >= 100 && <div className="flex justify-between text-green-400 font-bold mb-1"><span>🎉 졸업 보너스</span><span>+10,000</span></div>}
+                                            <div className="border-t border-slate-500 my-2"></div>
+                                            <div className="flex justify-between text-2xl font-black text-white">
+                                                <span>총점</span>
+                                                <span>
+                                                    {Math.max(0, (stage * 100) + (hp * 10) + (maxMental * 500) + gold - (deck.length * 50) + (stage >= 100 ? 10000 : 0)).toLocaleString()}점
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col gap-4 mb-8 w-full max-w-sm">
+                                            <input 
+                                                type="text" 
+                                                placeholder="이름을 입력하세요" 
+                                                className="px-4 py-2 rounded text-black text-center font-bold"
+                                                value={playerName}
+                                                onChange={(e) => setPlayerName(e.target.value)}
+                                                maxLength={10}
+                                            />
+                                            <button onClick={saveScore} className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-3 px-6 rounded-lg">기록 저장하기</button>
+                                            <button onClick={copyScore} className="bg-slate-600 hover:bg-slate-500 text-white font-bold py-3 px-6 rounded-lg">성적표 복사하기 (공유)</button>
+                                        </div>
+
+                                        <button onClick={() => setGameState('MENU')} className="text-white underline hover:text-slate-300">처음으로 돌아가기</button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+        
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<SchoolAscent />);
+    </script>
+</body>
+</html>
