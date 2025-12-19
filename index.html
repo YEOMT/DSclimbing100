@@ -1559,8 +1559,8 @@
                                                     ))}
                                                 </div>
 
-                                                {/* 턴 종료 버튼 및 버린 카드 */}
-                                                <div className="flex flex-col gap-2 items-center pb-2">
+                                                {/* [수정] 버튼이 카드보다 항상 위에 오도록 z-50 relative 추가 */}
+                                                    <div className="flex flex-col gap-2 items-center pb-2 z-50 relative">
                                                     <button onClick={endTurn} className="bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 px-4 md:py-4 md:px-8 rounded-xl shadow-lg border-b-4 border-amber-800 active:border-b-0 active:translate-y-1 transition-all text-sm md:text-lg whitespace-nowrap">턴 종료</button>
                                                     <div className="relative group hidden sm:block">
                                                         <div className="w-16 h-24 md:w-20 md:h-28 bg-slate-700 rounded border-2 border-slate-500 flex items-center justify-center font-bold text-slate-400 text-lg shadow-lg">{discardPile.length}</div>
@@ -1795,4 +1795,5 @@
 </body>
 
 </html>
+
 
