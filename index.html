@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>대송 등반: 100교시의 전설 v2.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -45,19 +45,27 @@
             border-radius: 12px;
         }
 
-        /* [최적화] 태블릿 & 모바일 (화면 폭 1024px 이하) */
+       /* [최적화] 태블릿 & 모바일 (화면 폭 1024px 이하) */
         @media (max-width: 1024px) {
             #game-container {
                 width: 100vw;       /* 가로 꽉 채움 */
                 height: 100dvh;     /* 세로 꽉 채움 (주소창 제외한 실제 높이) */
                 max-width: none;    /* 제한 해제 */
                 max-height: none;   /* 제한 해제 */
-                aspect-ratio: auto; /* 비율 고정 해제 (기기 비율 따라감) */
+                aspect-ratio: auto; /* 비율 고정 해제 */
                 border: none;
                 border-radius: 0;
+                
+                /* [추가] 화면 밖으로 나가는 요소 강제 숨김 (흔들림 방지) */
+                overflow: hidden; 
+                /* [추가] 터치 반응 속도 향상 및 더블탭 확대 방지 */
+                touch-action: manipulation;
             }
             /* 모바일에서 스크롤바 숨기기 */
             ::-webkit-scrollbar { display: none; }
+            
+            /* [추가] 텍스트가 너무 커서 줄바꿈 될 때 단어 단위로 끊기 */
+            * { word-break: keep-all; }
         }
 
         @keyframes shake-hard {
@@ -1845,6 +1853,7 @@
 </body>
 
 </html>
+
 
 
 
