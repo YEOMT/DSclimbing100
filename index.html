@@ -513,21 +513,26 @@
             return (
                 <div 
                     onClick={() => onClick && onClick(card)}
-                    className={`relative w-20 h-28 md:w-32 md:h-48 rounded-lg border-2 flex flex-col p-1 md:p-2 cursor-pointer transition-transform hover:scale-110 shadow-md select-none bg-white
-                    ${RARITY[card.rarity].color}
+                    /* [수정] 모바일 카드 크기 확대: w-20 -> w-28, h-28 -> h-40 */
+                    className={`relative w-28 h-40 md:w-36 md:h-52 rounded-lg border-2 flex flex-col p-1 md:p-2 cursor-pointer transition-transform hover:scale-110 shadow-md select-none bg-white
+                    ${RARITY[card.rarity].color} 
                     ${isSelected ? 'ring-4 ring-red-500 -translate-y-4' : ''}
                     ${card.exhaust ? 'card-exhaust' : ''}
                     `}
                 >
-                    <div className="text-xs font-bold flex justify-between">
-                        <span className="font-extrabold">{subjectInfo.name}</span>
-                        <span className="bg-white/50 px-1 rounded">{card.cost} 코스트</span>
+                    <div className="text-[10px] md:text-xs font-bold text-slate-500 flex justify-between items-center mb-1">
+                        {/* 폰트 크기 약간 키움 text-[10px] -> text-xs */}
+                        <span className="text-xs">{SUBJECTS[card.subject].emoji}</span>
+                        <span className="text-xs bg-slate-200 px-1 rounded text-slate-700">{card.cost}코</span>
                     </div>
-                    <div className="text-sm font-bold text-center mt-2 break-keep leading-tight text-black">
-                        {card.name} 
-                        {card.upgrades > 0 && <span className="text-red-500 text-xs ml-1">(+{card.upgrades})</span>}
+                    
+                    {/* 카드 이름 폰트 키움 */}
+                    <div className="font-black text-sm md:text-base text-center leading-tight mb-1 text-slate-800 break-keep line-clamp-2 h-10 flex items-center justify-center">
+                        {card.name}
                     </div>
-                    <div className="flex-1 flex flex-col items-center justify-center gap-1 bg-white/20 rounded-lg my-1">
+
+                    <div className="flex-1 flex flex-col items-center justify-center relative my-1">
+                        {/* 아이콘/수치 등은 그대로 유지... */}
                         <div className="flex gap-2 text-3xl">
                             <span>{subjectInfo.emoji}</span>
                             <span>{actionEmoji}</span>
@@ -1439,69 +1444,84 @@
                     )}
 
                     {gameState === 'SELECT_SUBJECTS' && (
-                        /* [수정] 모든 과목 한 곳에 통합 + 스크롤 가능 */
+                        /* [수정] justify-center 제거 -> justify-start로 변경하여 위쪽 잘림 원천 봉쇄 */
                         <div className="w-full h-full bg-slate-800 flex flex-col items-center p-4 absolute inset-0 z-50 overflow-y-auto">
-                            <div className="w-full max-w-6xl flex flex-col items-center min-h-full justify-center py-12">
+                            {/* pt-24(약 96px)로 위쪽 여백 충분히 확보 */}
+                            <div className="w-full max-w-6xl flex flex-col items-center min-h-full justify-start pt-24 pb-24">
                                 
                                 {/* 1. 제목 영역 */}
-                                <div className="shrink-0 text-center mb-6">
+                                <div className="shrink-0 text-center mb-8">
                                     <h2 className="text-3xl md:text-5xl font-bold text-white mb-2">이번 학기 수강 신청</h2>
                                     <p className="text-slate-400 text-sm md:text-lg">5개의 과목을 선택하세요 ({selectedSubjects.length}/5)</p>
                                 </div>
                                 
-                                {/* 2. 과목 선택 영역 (히든 과목 포함) */}
-                                <div className="flex-1 flex flex-col items-center justify-center w-full gap-4 mb-8">
+                                {/* 2. 과목 선택 영역 */}
+                                <div className="flex-1 flex flex-col items-center w-full gap-6">
                                     
-                                    {/* 모든 과목을 하나의 flex 컨테이너에 담음 */}
-                                    <div className="flex flex-wrap gap-2 md:gap-3 justify-center w-full">
+                                    {/* 모든 과목 통합 컨테이너 */}
+                                    <div className="flex flex-wrap gap-3 md:gap-4 justify-center w-full">
                                         
-                                        {/* A. 일반 과목 렌더링 */}
+                                        {/* A. 일반 과목 (카드 크기 대폭 확대: w-32) */}
                                         {Object.values(SUBJECTS).filter(s => s.id !== 'BASIC' && s.id !== 'ADMIN').map((subj) => (
                                             <div key={subj.id} onClick={() => {
                                                 playRetroSound('click');
                                                 if (selectedSubjects.includes(subj.id)) setSelectedSubjects(prev => prev.filter(id => id !== subj.id));
                                                 else if (selectedSubjects.length < 5) setSelectedSubjects(prev => [...prev, subj.id]);
-                                            }} className={`w-24 h-32 md:w-36 md:h-48 p-2 rounded-xl border-2 cursor-pointer transition-all flex flex-col items-center gap-1 
+                                            }} className={`w-32 h-40 md:w-40 md:h-56 p-2 rounded-xl border-2 cursor-pointer transition-all flex flex-col items-center justify-between gap-1 
                                                 ${selectedSubjects.includes(subj.id) 
                                                     ? 'bg-blue-600 border-blue-300 transform scale-105 shadow-lg' 
                                                     : 'bg-slate-700 border-slate-600 hover:bg-slate-600'
                                                 } opacity-90 hover:opacity-100`}>
-                                                <div className="text-3xl md:text-5xl mb-1">{subj.emoji}</div>
-                                                <div className="font-bold text-sm md:text-lg whitespace-nowrap">{subj.name}</div>
-                                                <div className="text-[10px] md:text-xs text-center break-keep opacity-80 leading-tight hidden md:block">{subj.desc}</div>
+                                                
+                                                {/* 이모지 & 이름 */}
+                                                <div className="flex flex-col items-center pt-2">
+                                                    <div className="text-4xl md:text-6xl mb-1">{subj.emoji}</div>
+                                                    <div className="font-bold text-base md:text-xl whitespace-nowrap">{subj.name}</div>
+                                                </div>
+
+                                                {/* 설명 (모바일에서도 보이게 처리) */}
+                                                <div className="w-full bg-black/20 rounded p-1 mb-1">
+                                                    <div className="text-[11px] md:text-sm text-center break-keep opacity-90 leading-tight">
+                                                        {subj.desc}
+                                                    </div>
+                                                </div>
                                             </div>
                                         ))}
 
-                                        {/* B. 히든 과목 (바로 옆에 이어 붙이기) */}
+                                        {/* B. 히든 과목 (일반 카드와 크기 통일) */}
                                         {(() => {
                                             const subj = SUBJECTS['ADMIN'];
                                             if (!subj) return null;
 
-                                            // 1) 잠김 상태 (일반 카드 크기, 회색)
                                             if (!isGameCleared) {
                                                 return (
-                                                    <div className="w-24 h-32 md:w-36 md:h-48 p-2 rounded-xl border-2 border-slate-700 bg-slate-800/50 flex flex-col items-center justify-center gap-2 grayscale cursor-not-allowed opacity-50">
-                                                        <div className="text-3xl md:text-5xl animate-pulse">🔒</div>
-                                                        <div className="font-bold text-xs md:text-sm text-slate-500">???</div>
+                                                    <div className="w-32 h-40 md:w-40 md:h-56 p-2 rounded-xl border-2 border-slate-700 bg-slate-800/50 flex flex-col items-center justify-center gap-2 grayscale cursor-not-allowed opacity-50">
+                                                        <div className="text-4xl md:text-6xl animate-pulse">🔒</div>
+                                                        <div className="font-bold text-sm md:text-base text-slate-500">???</div>
                                                     </div>
                                                 );
                                             }
 
-                                            // 2) 해금 상태 (일반 카드 크기, 황금색)
                                             return (
                                                 <div onClick={() => {
                                                     playRetroSound('click');
                                                     if (selectedSubjects.includes(subj.id)) setSelectedSubjects(prev => prev.filter(id => id !== subj.id));
                                                     else if (selectedSubjects.length < 5) setSelectedSubjects(prev => [...prev, subj.id]);
-                                                }} className={`w-24 h-32 md:w-36 md:h-48 p-2 rounded-xl border-2 cursor-pointer transition-all flex flex-col items-center gap-1 overflow-hidden group relative
+                                                }} className={`w-32 h-40 md:w-40 md:h-56 p-2 rounded-xl border-2 cursor-pointer transition-all flex flex-col items-center justify-between gap-1 overflow-hidden group relative
                                                     ${selectedSubjects.includes(subj.id) 
                                                         ? 'bg-yellow-700 border-yellow-300 shadow-2xl transform scale-105 ring-2 ring-yellow-500/50' 
                                                         : 'bg-slate-800 border-yellow-600/50 hover:bg-slate-700 hover:border-yellow-500'
                                                     }`}>
                                                     <div className="absolute inset-0 bg-yellow-500/10 group-hover:bg-yellow-500/20 transition-colors"></div>
-                                                    <div className="text-3xl md:text-5xl mb-1 z-10">{subj.emoji}</div>
-                                                    <div className="font-bold text-sm md:text-lg text-yellow-400 z-10 whitespace-nowrap">관리자</div>
-                                                    <div className="text-[10px] md:text-xs text-center text-yellow-100/80 leading-tight z-10 hidden md:block">교장 선생님의 권한 대행</div>
+                                                    <div className="flex flex-col items-center pt-2 z-10">
+                                                        <div className="text-4xl md:text-6xl mb-1">{subj.emoji}</div>
+                                                        <div className="font-bold text-base md:text-xl text-yellow-400 whitespace-nowrap">{subj.name}</div>
+                                                    </div>
+                                                    <div className="w-full bg-black/20 rounded p-1 mb-1 z-10">
+                                                        <div className="text-[11px] md:text-sm text-center text-yellow-100/90 leading-tight">
+                                                            교장 권한 대행
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             );
                                         })()}
@@ -1509,8 +1529,8 @@
                                     </div>
                                 </div>
                                 
-                                {/* 3. 수업 시작 버튼 (하단 여백 확보) */}
-                                <div className="shrink-0 mt-4 mb-24 md:mb-12">
+                                {/* 3. 수업 시작 버튼 */}
+                                <div className="shrink-0 mt-8">
                                     <button onClick={confirmSubjects} disabled={selectedSubjects.length !== 5} className={`font-bold py-4 px-12 md:px-16 rounded-xl text-xl md:text-2xl transition shadow-xl ${selectedSubjects.length === 5 ? 'bg-green-600 hover:bg-green-500 text-white cursor-pointer transform hover:scale-105' : 'bg-slate-600 text-slate-400 cursor-not-allowed'}`}>수업 시작</button>
                                 </div>
                             </div>
@@ -1878,6 +1898,7 @@
 </body>
 
 </html>
+
 
 
 
