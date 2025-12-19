@@ -1348,13 +1348,19 @@
 
                    {gameState === 'MENU' && (
                         <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 animate-fade-in absolute inset-0 z-50">
-                            {/* [수정] 이모지 크기: 9xl -> 7xl, 제목: 6xl -> 4xl */}
+                            {/* [수정] 모바일: 7xl(이모지), 4xl(제목) / PC: 9xl, 6xl 유지 */}
                             <div className="text-7xl md:text-9xl mb-4 md:mb-8 animate-bounce">🏫</div>
                             <h1 className="text-4xl md:text-6xl font-black mb-4 text-yellow-400 drop-shadow-lg">대송 등반</h1>
-                            <p className="text-xl md:text-2xl mb-8 text-slate-300">100교시의 전설 v2.1</p>
+                            <p className="text-lg md:text-2xl mb-8 text-slate-300">100교시의 전설 v2.1</p>
+                            
                             <div className="flex gap-4">
-                                <button onClick={startGame} className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-12 rounded-xl text-xl shadow-xl transition transform hover:scale-105">등교하기 (시작)</button>
-                                <button onClick={() => setGameState('RANKING')} className="bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-4 px-12 rounded-xl text-xl shadow-xl transition transform hover:scale-105 flex items-center gap-2"><Icon name="Trophy" /> 명예의 전당</button>
+                                {/* 버튼도 모바일에서는 패딩을 조금 줄임 (py-3 px-8) */}
+                                <button onClick={startGame} className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 md:py-4 md:px-12 rounded-xl text-lg md:text-xl shadow-xl transition transform hover:scale-105">등교하기 (시작)</button>
+                                <button onClick={() => setGameState('RANKING')} className="bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-3 px-8 md:py-4 md:px-12 rounded-xl text-lg md:text-xl shadow-xl transition transform hover:scale-105 flex items-center gap-2"><Icon name="Trophy" /> 명예의 전당</button>
+                            </div>
+                            
+                            <div className="absolute bottom-4 right-4 text-slate-500 text-xs font-mono opacity-50 hover:opacity-100 transition-opacity cursor-default">
+                                Copyright: YeomT
                             </div>
                         </div>
                     )}
@@ -1396,65 +1402,105 @@
                     )}
 
                     {gameState === 'SELECT_SUBJECTS' && (
-                        /* [수정] overflow-y-auto 추가로 스크롤 가능하게 변경, flex-wrap으로 줄바꿈 허용 */
-                        <div className="w-full h-full bg-slate-800 flex flex-col items-center p-4 animate-fade-in absolute inset-0 z-50 overflow-y-auto">
-                            <div className="w-full max-w-6xl flex flex-col items-center min-h-full py-12"> {/* 내부 여백(py-12) 확보 */}
-                                <h2 className="text-4xl font-bold mb-2 text-white text-center">이번 학기 수강 신청</h2>
-                                <p className="text-slate-400 mb-8 text-center">5개의 과목을 선택하세요 ({selectedSubjects.length}/5)</p>
+                        /* [수정] 패드 잘림 방지: overflow-hidden -> overflow-y-auto (스크롤 가능하게 변경) */
+                        <div className="w-full h-full bg-slate-800 flex flex-col items-center p-4 absolute inset-0 z-50 overflow-y-auto">
+                            {/* 내부 컨테이너: h-full 대신 min-h-full을 써서 내용이 길어지면 늘어나게 함 */}
+                            <div className="w-full max-w-6xl flex flex-col items-center min-h-full justify-center py-8">
                                 
-                                {/* [수정] Grid 대신 Flex Wrap 사용으로 화면 폭에 맞춰 자연스럽게 배치 */}
-                                {/* [수정] 히든 과목(관리자) 처리를 포함한 수강신청 목록 */}
-                                <div className="flex flex-wrap gap-4 mb-12 justify-center w-full">
-                                    {Object.values(SUBJECTS).filter(s => s.id !== 'BASIC').map((subj) => {
-                                        // 관리자 과목인데 아직 클리어 못했으면 '잠김' 처리
-                                        if (subj.id === 'ADMIN' && !isGameCleared) {
-                                            return (
-                                                <div key="LOCKED" className="w-32 sm:w-40 p-4 rounded-xl border-2 border-slate-700 bg-slate-800 opacity-50 flex flex-col items-center gap-2 grayscale cursor-not-allowed">
-                                                    <div className="text-4xl">🔒</div>
-                                                    <div className="font-bold text-lg">???</div>
-                                                    <div className="text-xs text-center">100교시 클리어 시<br/>해금됩니다.</div>
-                                                </div>
-                                            );
-                                        }
-
-                                        // 그 외(일반 과목 or 해금된 관리자)
-                                        return (
+                                {/* 1. 제목 영역 */}
+                                <div className="shrink-0 text-center mb-6">
+                                    <h2 className="text-3xl md:text-5xl font-bold text-white mb-2">이번 학기 수강 신청</h2>
+                                    <p className="text-slate-400 text-sm md:text-lg">5개의 과목을 선택하세요 ({selectedSubjects.length}/5)</p>
+                                </div>
+                                
+                                {/* 2. 과목 선택 영역 (flex-wrap으로 줄바꿈 허용) */}
+                                <div className="flex-1 flex flex-col items-center justify-center w-full gap-4 mb-8">
+                                    
+                                    {/* A. 일반 과목 */}
+                                    <div className="flex flex-wrap gap-3 justify-center w-full">
+                                        {Object.values(SUBJECTS).filter(s => s.id !== 'BASIC' && s.id !== 'ADMIN').map((subj) => (
                                             <div key={subj.id} onClick={() => {
                                                 playRetroSound('click');
                                                 if (selectedSubjects.includes(subj.id)) setSelectedSubjects(prev => prev.filter(id => id !== subj.id));
                                                 else if (selectedSubjects.length < 5) setSelectedSubjects(prev => [...prev, subj.id]);
-                                            }} className={`w-32 sm:w-40 p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col items-center gap-2 
+                                            }} className={`w-28 h-36 md:w-36 md:h-48 p-2 rounded-xl border-2 cursor-pointer transition-all flex flex-col items-center gap-1 
                                                 ${selectedSubjects.includes(subj.id) 
-                                                    ? (subj.id === 'ADMIN' ? 'bg-yellow-600 border-yellow-300 ring-4 ring-yellow-500 transform scale-105 shadow-2xl' : 'bg-blue-600 border-blue-300 transform scale-105 shadow-lg') 
-                                                    : (subj.id === 'ADMIN' ? 'bg-slate-700 border-yellow-500/50 hover:bg-slate-600 hover:border-yellow-400' : 'bg-slate-700 border-slate-600 hover:bg-slate-600')
-                                                } opacity-80 hover:opacity-100`}>
-                                                <div className="text-4xl">{subj.emoji}</div>
-                                                <div className={`font-bold text-lg whitespace-nowrap ${subj.id==='ADMIN'?'text-yellow-400':''}`}>{subj.name}</div>
-                                                <div className="text-xs text-center break-keep opacity-80 leading-tight">{subj.desc}</div>
+                                                    ? 'bg-blue-600 border-blue-300 transform scale-105 shadow-lg' 
+                                                    : 'bg-slate-700 border-slate-600 hover:bg-slate-600'
+                                                } opacity-90 hover:opacity-100`}>
+                                                <div className="text-4xl md:text-5xl mb-2">{subj.emoji}</div>
+                                                <div className="font-bold text-sm md:text-lg whitespace-nowrap">{subj.name}</div>
+                                                <div className="text-[10px] md:text-xs text-center break-keep opacity-80 leading-tight">{subj.desc}</div>
                                             </div>
-                                        );
-                                    })}
+                                        ))}
+                                    </div>
+
+                                    {/* B. 구분선 */}
+                                    <div className="w-24 h-1 bg-slate-700 rounded-full shrink-0 my-4"></div>
+
+                                    {/* C. 히든/특별 과목 */}
+                                    <div className="flex justify-center shrink-0">
+                                        {(() => {
+                                            const subj = SUBJECTS['ADMIN'];
+                                            if (!subj) return null;
+
+                                            if (!isGameCleared) {
+                                                return (
+                                                    <div className="w-64 p-4 rounded-xl border-2 border-slate-700 bg-slate-800/50 flex flex-col items-center gap-2 grayscale cursor-not-allowed">
+                                                        <div className="text-4xl animate-pulse">🔒</div>
+                                                        <div className="font-bold text-lg text-slate-500">???</div>
+                                                        <div className="text-xs text-center text-slate-600">전설적인 졸업생 전용</div>
+                                                    </div>
+                                                );
+                                            }
+
+                                            return (
+                                                <div onClick={() => {
+                                                    playRetroSound('click');
+                                                    if (selectedSubjects.includes(subj.id)) setSelectedSubjects(prev => prev.filter(id => id !== subj.id));
+                                                    else if (selectedSubjects.length < 5) setSelectedSubjects(prev => [...prev, subj.id]);
+                                                }} className={`w-72 p-4 rounded-xl border-4 cursor-pointer transition-all flex flex-row items-center justify-center gap-4 relative overflow-hidden group
+                                                    ${selectedSubjects.includes(subj.id) 
+                                                        ? 'bg-yellow-700 border-yellow-300 shadow-2xl scale-105 ring-2 ring-yellow-500/50' 
+                                                        : 'bg-slate-800 border-yellow-600/50 hover:bg-slate-700 hover:border-yellow-500'
+                                                    }`}>
+                                                    <div className="absolute inset-0 bg-yellow-500/10 group-hover:bg-yellow-500/20 transition-colors"></div>
+                                                    <div className="text-5xl drop-shadow-md z-10">{subj.emoji}</div>
+                                                    <div className="flex flex-col z-10">
+                                                        <div className="font-black text-2xl text-yellow-400">{subj.name}</div>
+                                                        <div className="text-xs text-yellow-100/80 leading-tight">교장 선생님의 권한 대행</div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
                                 </div>
-                                <button onClick={confirmSubjects} disabled={selectedSubjects.length !== 5} className={`font-bold py-4 px-16 rounded-xl text-2xl transition shadow-xl mb-12 ${selectedSubjects.length === 5 ? 'bg-green-600 hover:bg-green-500 text-white cursor-pointer transform hover:scale-105' : 'bg-slate-600 text-slate-400 cursor-not-allowed'}`}>수업 시작</button>
+                                
+                                {/* 3. 수업 시작 버튼 (하단 여백 확보) */}
+                                <div className="shrink-0 mt-4 mb-12">
+                                    <button onClick={confirmSubjects} disabled={selectedSubjects.length !== 5} className={`font-bold py-4 px-16 rounded-xl text-2xl transition shadow-xl ${selectedSubjects.length === 5 ? 'bg-green-600 hover:bg-green-500 text-white cursor-pointer transform hover:scale-105' : 'bg-slate-600 text-slate-400 cursor-not-allowed'}`}>수업 시작</button>
+                                </div>
                             </div>
                         </div>
                     )}
 
                     {!['MENU', 'SELECT_SUBJECTS', 'RANKING'].includes(gameState) && (
                         <div className="w-full h-full flex flex-col relative">
-                            {/* [수정] p-3 -> p-2, 폰트 크기 조정 */}
-                            <div className="bg-slate-800 p-2 flex justify-between items-center shadow-lg z-10 border-b border-slate-700">
+                            {/* [수정] 모바일: p-2, text-sm / PC: p-3, text-base */}
+                            <div className="bg-slate-800 p-2 md:p-3 flex justify-between items-center shadow-lg z-10 border-b border-slate-700 text-sm md:text-base">
                                 <div className="flex gap-3 md:gap-6 items-center">
-                                    {/* 모바일에서는 '교시' 글자 작게 */}
-                                    <div className="font-black text-lg md:text-xl flex items-center gap-2"><div className="w-6 h-6 md:w-8 md:h-8 rounded bg-yellow-500 text-black flex items-center justify-center text-sm">{stage}</div> <span className="hidden md:inline">교시</span></div>
-                                    <div className="flex gap-4 text-sm font-bold text-slate-300">
-                                        <span className="flex items-center gap-1 text-red-400"><Icon name="Heart" size={16}/> {hp}/{maxHp}</span>
-                                        <span className="flex items-center gap-1 text-blue-400"><Icon name="Brain" size={16}/> {mental}/{maxMental}</span>
-                                        <span className="flex items-center gap-1 text-yellow-400"><Icon name="Coins" size={16}/> {gold}</span>
+                                    <div className="font-black text-lg md:text-xl flex items-center gap-2">
+                                        <div className="w-6 h-6 md:w-8 md:h-8 rounded bg-yellow-500 text-black flex items-center justify-center text-xs md:text-sm">{stage}</div> 교시
+                                    </div>
+                                    <div className="flex gap-2 md:gap-4 font-bold text-slate-300">
+                                        <span className="flex items-center gap-1 text-red-400"><Icon name="Heart" size={14} className="md:w-4 md:h-4"/> {hp}/{maxHp}</span>
+                                        <span className="flex items-center gap-1 text-blue-400"><Icon name="Brain" size={14} className="md:w-4 md:h-4"/> {mental}/{maxMental}</span>
+                                        <span className="flex items-center gap-1 text-yellow-400"><Icon name="Coins" size={14} className="md:w-4 md:h-4"/> {gold}</span>
                                     </div>
                                 </div>
-                                <div className="flex gap-2">
-                                    {activeSubjects.map(s => <span key={s} title={SUBJECTS[s].name} className="text-xl cursor-help">{SUBJECTS[s].emoji}</span>)}
+                                <div className="flex gap-1 md:gap-2">
+                                    {/* 과목 아이콘도 모바일에서는 작게 */}
+                                    {activeSubjects.map(s => <span key={s} title={SUBJECTS[s].name} className="text-lg md:text-xl cursor-help">{SUBJECTS[s].emoji}</span>)}
                                 </div>
                             </div>
 
@@ -1643,12 +1689,15 @@
                                 )}
                                 
                               {gameState === 'SHOP' && (
-                                    /* [수정] z-index 높임(z-30) 및 하단 여백(pb-40) 대폭 추가하여 잘림 방지 */
-                                    <div className="flex-1 overflow-y-auto p-8 relative bg-slate-900/95 z-30">
-                                        <div className="flex justify-between items-center mb-8 border-b border-slate-700 pb-4">
-                                            <h2 className="text-3xl md:text-4xl font-bold text-white flex items-center gap-3"><Icon name="ShoppingCart" size={40}/> 매점</h2>
-                                            <div className="text-xl md:text-2xl text-yellow-400 font-bold flex items-center gap-2"><Icon name="Coins"/> {gold}원</div>
+                                    <div className="flex-1 overflow-y-auto p-4 md:p-8 relative bg-slate-900/95 z-30">
+                                        <div className="flex justify-between items-center mb-4 md:mb-8 border-b border-slate-700 pb-4">
+                                            {/* [수정] 제목 크기 축소: 2xl~3xl (모바일) */}
+                                            <h2 className="text-2xl md:text-4xl font-bold text-white flex items-center gap-2 md:gap-3">
+                                                <Icon name="ShoppingCart" className="w-6 h-6 md:w-10 md:h-10"/> 매점
+                                            </h2>
+                                            <div className="text-lg md:text-2xl text-yellow-400 font-bold flex items-center gap-2"><Icon name="Coins"/> {gold}원</div>
                                         </div>
+                                        {/* ... 이후 내용 동일 ... */}
                                         <div className="flex flex-col items-center gap-12 pb-40"> {/* pb-40으로 하단 공간 넉넉하게 확보 */}
                                             <div className="flex flex-col md:flex-row gap-8 items-center bg-slate-800 p-6 rounded-xl border border-slate-600 w-full max-w-4xl justify-between">
                                                 <div className="flex items-center gap-4"><span className="text-5xl">🥐</span><div className="text-left"><div className="font-bold text-xl text-amber-200">매점 빵</div><div className="text-sm text-slate-400">체력을 30 회복합니다.</div></div></div>
@@ -1796,6 +1845,7 @@
 </body>
 
 </html>
+
 
 
 
