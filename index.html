@@ -15,6 +15,14 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
         
+        /* [1. 기본 설정: 인앱 브라우저 폰트 뻥튀기 방지] */
+        html {
+            -webkit-text-size-adjust: 100%; /* 아이폰 가로모드 글자 확대 방지 */
+            text-size-adjust: 100%;         /* 안드로이드 글자 확대 방지 */
+            height: 100%;
+            overflow: hidden; /* 스크롤 바운스 방지 */
+        }
+
         body {
             font-family: 'Noto Sans KR', sans-serif;
             background-color: #000;
@@ -26,15 +34,19 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            /* [2. 높이 설정: 100vh 대신 100dvh 사용 (모바일 주소창 대응)] */
+            height: 100dvh; 
+            width: 100vw;
+            position: fixed; /* 화면 고정 */
+            top: 0;
+            left: 0;
         }
 
        #game-container {
             position: relative;
-            overflow: hidden;
             background-color: #0f172a;
             
-            /* [기본: 데스크탑] 16:9 비율 유지 & 중앙 정렬 */
+            /* [데스크탑 기본] */
             width: 100%;
             height: 100%;
             max-width: 1280px;
@@ -43,31 +55,43 @@
             box-shadow: 0 0 50px rgba(0,0,0,0.5);
             border: 2px solid #334155;
             border-radius: 12px;
+            overflow: hidden; /* 자식 요소 튀어나옴 방지 */
         }
 
-       /* [최적화] 태블릿 & 모바일 (화면 폭 1024px 이하) */
+        /* [3. 모바일/태블릿 강력 최적화] */
         @media (max-width: 1024px) {
             #game-container {
-                width: 100vw;       /* 가로 꽉 채움 */
-                height: 100dvh;     /* 세로 꽉 채움 (주소창 제외한 실제 높이) */
-                max-width: none;    /* 제한 해제 */
-                max-height: none;   /* 제한 해제 */
-                aspect-ratio: auto; /* 비율 고정 해제 */
+                width: 100vw;       
+                height: 100dvh;     /* 다이나믹 뷰포트 (주소창 제외 실제 높이) */
+                max-width: none;    
+                max-height: none;   
+                aspect-ratio: auto; 
                 border: none;
                 border-radius: 0;
                 
-                /* [추가] 화면 밖으로 나가는 요소 강제 숨김 (흔들림 방지) */
-                overflow: hidden; 
-                /* [추가] 터치 반응 속도 향상 및 더블탭 확대 방지 */
+                /* 터치 반응 속도 향상 */
                 touch-action: manipulation;
             }
-            /* 모바일에서 스크롤바 숨기기 */
+            
+            /* 스크롤바 숨기기 */
             ::-webkit-scrollbar { display: none; }
             
-            /* [추가] 텍스트가 너무 커서 줄바꿈 될 때 단어 단위로 끊기 */
+            /* 글자가 너무 길면 단어 단위로 줄바꿈 (잘림 방지) */
             * { word-break: keep-all; }
         }
 
+        /* [4. 카드 텍스트 튀어나옴 방지용 클래스 추가] */
+        .card-desc-box {
+            display: -webkit-box;
+            -webkit-line-clamp: 3; /* 최대 3줄까지만 표시 */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.2;
+            word-break: break-word !important; /* 강제 줄바꿈 허용 */
+        }
+
+        /* 기존 애니메이션들 유지 */
         @keyframes shake-hard {
             0% { transform: translate(0px, 0px) rotate(0deg); }
             10% { transform: translate(-4px, -4px) rotate(-2deg); }
@@ -94,15 +118,15 @@
         .rank-table th { background-color: #1e293b; color: #94a3b8; padding: 12px; }
         .rank-table td { border-bottom: 1px solid #334155; padding: 12px; }
         .rank-table tr:hover { background-color: #334155; }
-/* 타격감 효과 (v1.5 추가) */
+
         @keyframes float-up { 0% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -150%) scale(1.2); } }
         @keyframes boom { 0% { transform: translate(-50%, -50%) scale(0.5); } 50% { transform: translate(-50%, -50%) scale(1.5); } 100% { opacity: 0; transform: translate(-50%, -150%) scale(1); } }
         @keyframes pulse-red { 0%, 100% { box-shadow: inset 0 0 0 0 transparent; } 50% { box-shadow: inset 0 0 50px 20px rgba(239, 68, 68, 0.7); background-color: rgba(239, 68, 68, 0.3); } }
         
         .dmg-num { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 100; font-weight: 900; text-shadow: 2px 2px 0 #000, -1px -1px 0 #000; white-space: nowrap; }
         .dmg-normal { font-size: 2.5rem; color: white; animation: float-up 0.8s ease-out forwards; }
-        .dmg-crit { font-size: 3.5rem; color: #facc15; animation: float-up 0.8s ease-out forwards; } /* 25 이상 */
-        .dmg-super { font-size: 5rem; color: #ef4444; animation: boom 0.8s ease-out forwards; } /* 45 이상 */
+        .dmg-crit { font-size: 3.5rem; color: #facc15; animation: float-up 0.8s ease-out forwards; } 
+        .dmg-super { font-size: 5rem; color: #ef4444; animation: boom 0.8s ease-out forwards; } 
         .flash-red { animation: pulse-red 0.5s ease-in-out; }
     </style>
 </head>
@@ -254,7 +278,7 @@
             { id: 'r1', name: '천재 교과서', desc: '정신력을 영구적으로 2 상승시킵니다.', effect: 'MAX_MANA', val: 2, emoji: '📚' },
             { id: 'r2', name: '대송중 깃발', desc: '한 턴에 드로우하는 카드 수를 1 상승시킵니다.', effect: 'DRAW_PLUS', val: 1, emoji: '🚩' },
             { id: 'r3', name: '대회 트로피', desc: '최대 체력을 30 상승시킵니다.', effect: 'MAX_HP', val: 30, emoji: '🏆' },
-            { id: 'r4', name: '컴퓨터 싸인펜', desc: '펜 찌르기의 데미지를 영구적으로 10 상승시킵니다.', effect: 'PEN_BUFF', val: 10, emoji: '🖍️' },
+            { id: 'r4', name: '컴퓨터 싸인펜', desc: '펜 찌르기의 데미지를 영구적으로 15 상승시킵니다.', effect: 'PEN_BUFF', val: 15, emoji: '🖍️' },
             { id: 'r5', name: '이온 음료', desc: '매 전투 첫 턴에 정신력을 1 추가로 얻습니다.', effect: 'START_MANA', val: 1, emoji: '🥤' },
             { id: 'r6', name: '지우개', desc: '전투 시작 시 모든 적에게 약화 1을 부여합니다.', effect: 'START_WEAK', val: 1, emoji: '🧼' },
             { id: 'r7', name: '어머니의 도시락', desc: '전투가 끝날 때마다 체력을 5 회복합니다.', effect: 'POST_COMBAT_HEAL', val: 5, emoji: '🍱' },
@@ -283,7 +307,7 @@
             { id: 'e2', subject: 'ENGLISH', rarity: 'SPECIAL', name: '원어민 회화', cost: 3, type: 'SKILL', val: 0, desc: '🗣️ 적을 1턴간 기절시킵니다.', effect: 'STUN' },
             { id: 'e3', subject: 'ENGLISH', rarity: 'RARE', name: '간접 의문문', cost: 1, type: 'DEFENSE', val: 12, desc: '❓ 방어도 12. 다음 턴 적의 공격 1회 무효화.', effect: 'DODGE' },
             { id: 'e4', subject: 'ENGLISH', rarity: 'COMMON', name: '단어 시험', cost: 0, type: 'ATTACK', val: 7, desc: '🅰️ 7의 피해를 줍니다.', },
-            { id: 'e5', subject: 'ENGLISH', rarity: 'RARE', name: '수동태', cost: 2, type: 'SKILL', val: 0, desc: '🛡️ 현재 방어도를 3배로 증가시킵니다.', effect: 'BLOCK_MULTIPLY', effectVal: 3 },
+            { id: 'e5', subject: 'ENGLISH', rarity: 'RARE', name: '수동태', cost: 2, type: 'SKILL', val: 0, desc: '🛡️ 현재 방어도를 2배로 증가시킵니다.', effect: 'BLOCK_MULTIPLY', effectVal: 2 },
             { id: 'e6', subject: 'ENGLISH', rarity: 'LEGEND', name: '본문 해석', cost: 1, type: 'ATTACK', val: 0, desc: '📖 방어도 수치만큼 적에게 피해를 줍니다.', effect: 'BODY_SLAM' },
             { id: 's1', subject: 'SCIENCE', rarity: 'COMMON', name: '작용 반작용', cost: 0, type: 'ATTACK', val: 12, desc: '💥 12 피해. 내 체력 3 감소.', selfDamage: 3 },
             { id: 's2', subject: 'SCIENCE', rarity: 'SPECIAL', name: '핵분열', cost: 2, type: 'ATTACK', val: 25, desc: '☢️ 25 피해. 내 체력 5 감소.', selfDamage: 5 },
@@ -514,7 +538,12 @@
                             </span>
                         )}
                     </div>
-                    <div className="text-xs text-center bg-white/40 p-1 rounded min-h-[40px] flex items-center justify-center break-keep text-slate-900 leading-none">{card.desc}</div>
+                    {/* [수정] 인앱 브라우저에서 글자 튀어나옴 방지 (클래스 추가, leading 조정) */}
+<div className="text-[10px] md:text-xs text-center bg-white/40 p-1 rounded min-h-[40px] flex items-center justify-center text-slate-900 w-full overflow-hidden">
+    <div className="card-desc-box w-full">
+        {card.desc}
+    </div>
+</div>
                     <div className="absolute bottom-1 right-2 text-[10px] opacity-70 text-black font-bold">{RARITY[card.rarity].name}</div>
                 </div>
             );
@@ -1849,6 +1878,7 @@
 </body>
 
 </html>
+
 
 
 
