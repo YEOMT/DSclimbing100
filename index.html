@@ -314,11 +314,11 @@
             { id: 'm2', subject: 'MATH', rarity: 'SPECIAL', name: '이차방정식', cost: 2, type: 'ATTACK', val: 15, desc: '✖️ 15의 피해. 손패의 수학 카드 비용 -1.', effect: 'MATH_COST_REDUCE' },
             { id: 'm3', subject: 'MATH', rarity: 'RARE', name: '확률과 통계', cost: 1, type: 'SKILL', val: 0, desc: '🎲 50% 확률로 정신력 2 회복, 실패시 체력 5 감소.', effect: 'GAMBLE_MANA' },
             { id: 'm4', subject: 'MATH', rarity: 'LEGEND', name: '미적분', cost: 3, type: 'ATTACK', val: 15, desc: '∫ 이번 턴 사용한 수학 카드 수만큼 피해량 2배씩 증가 (기본 15).', effect: 'MATH_MULTIPLY' },
-            { id: 'm5', subject: 'MATH', rarity: 'COMMON', name: '원뿔 찌르기', cost: 2, type: 'ATTACK', val: 12, desc: '📐 12의 피해를 줍니다.' },
+            { id: 'm5', subject: 'MATH', rarity: 'COMMON', name: '원뿔 찌르기', cost: 2, type: 'ATTACK', val: 12, desc: '📐 뾰족해! 12의 피해를 줍니다.' },
             { id: 'm6', subject: 'MATH', rarity: 'SPECIAL', name: '구구단', cost: 0, type: 'SKILL', val: 0, desc: '✖️ 카드 1장 드로우.', effect: 'DRAW', effectVal: 1 },
             { id: 'e1', subject: 'ENGLISH', rarity: 'COMMON', name: '지각동사', cost: 1, type: 'ATTACK', val: 6, desc: '👀 6의 피해. 카드 1장 드로우.', effect: 'DRAW', effectVal: 1 },
             { id: 'e2', subject: 'ENGLISH', rarity: 'SPECIAL', name: '원어민 회화', cost: 3, type: 'SKILL', val: 0, desc: '🗣️ 적을 1턴간 기절시킵니다.', effect: 'STUN' },
-            { id: 'e3', subject: 'ENGLISH', rarity: 'RARE', name: '간접 의문문', cost: 1, type: 'DEFENSE', val: 12, desc: '❓ 방어도 12. 다음 턴 적의 공격 1회 무효화.', effect: 'DODGE' },
+            { id: 'e3', subject: 'ENGLISH', rarity: 'RARE', name: '간접 의문문', cost: 2, type: 'DEFENSE', val: 7, desc: '❓ 방어도 7. 다음 턴 적의 공격 1회 무효화.', effect: 'DODGE' },
             { id: 'e4', subject: 'ENGLISH', rarity: 'COMMON', name: '단어 시험', cost: 0, type: 'ATTACK', val: 7, desc: '🅰️ 7의 피해를 줍니다.', },
             { id: 'e5', subject: 'ENGLISH', rarity: 'RARE', name: '수동태', cost: 2, type: 'SKILL', val: 0, desc: '🛡️ 현재 방어도를 2배로 증가시킵니다.', effect: 'BLOCK_MULTIPLY', effectVal: 2 },
             { id: 'e6', subject: 'ENGLISH', rarity: 'LEGEND', name: '본문 해석', cost: 1, type: 'ATTACK', val: 0, desc: '📖 방어도 수치만큼 적에게 피해를 줍니다.', effect: 'BODY_SLAM' },
@@ -328,17 +328,17 @@
             { id: 's4', subject: 'SCIENCE', rarity: 'LEGEND', name: '빅뱅', cost: 4, type: 'ATTACK', val: 50, desc: '🌌 모든 적에게 50 피해. 내 체력 10 감소.', effect: 'AOE_ATTACK', selfDamage: 10 },
             { id: 's5', subject: 'SCIENCE', rarity: 'COMMON', name: '광합성', cost: 1, type: 'SKILL', val: 0, desc: '☀️ 체력을 5 회복합니다.', effect: 'HEAL', effectVal: 5 },
             { id: 's6', subject: 'SCIENCE', rarity: 'SPECIAL', name: '산화', cost: 2, type: 'ATTACK', val: 8, desc: '🧪 8의 피해, 적에게 취약 1 부여.', effect: 'VULNERABLE_ATTACK', effectVal: 1 },
-            { id: 'h1', subject: 'HISTORY', rarity: 'COMMON', name: '독립운동', cost: 1, type: 'ATTACK', val: 5, desc: '🇰🇷 5 피해를 주고, 독(매 턴 피해) 3 부여.', effect: 'POISON', effectVal: 3 },
+            { id: 'h1', subject: 'HISTORY', rarity: 'COMMON', name: '독립운동', cost: 1, type: 'ATTACK', val: 5, desc: '🇰🇷 5 피해를 주고, 독(매 턴 피해) 4 부여.', effect: 'POISON', effectVal: 4 },
             { id: 'h2', subject: 'HISTORY', rarity: 'SPECIAL', name: '산업혁명', cost: 2, type: 'SKILL', val: 0, desc: '🏭 이번 전투 동안 매 턴 시작 시 방어도 5 획득.', effect: 'BUFF_BLOCK', effectVal: 5 },
-            { id: 'h3', subject: 'HISTORY', rarity: 'RARE', name: '세계 4대 문명', cost: 2, type: 'SKILL', val: 0, desc: '🌍 적 전체에게 6 피해를 주고 독 5 부여. (소멸)', effect: 'AOE_DMG_POISON', val: 6, effectVal: 5, exhaust: true },
+            { id: 'h3', subject: 'HISTORY', rarity: 'RARE', name: '세계 4대 문명', cost: 2, type: 'SKILL', val: 0, desc: '🌍 적 전체에게 10 피해를 주고 독 6 부여. (소멸)', effect: 'AOE_DMG_POISON', val: 10, effectVal: 6, exhaust: true },
             { id: 'h4', subject: 'HISTORY', rarity: 'LEGEND', name: '역사의 수레바퀴', cost: 2, type: 'SKILL', val: 0, desc: '🎡 적의 독 중첩을 2배로 만듭니다.', effect: 'DOUBLE_POISON' },
             { id: 'h5', subject: 'HISTORY', rarity: 'SPECIAL', name: '직지심체요절', cost: 1, type: 'SKILL', val: 0, desc: '📜 체력을 10 회복합니다. (소멸)', effect: 'HEAL', effectVal: 10, exhaust: true },
-            { id: 'h6', subject: 'HISTORY', rarity: 'COMMON', name: '흑사병', cost: 1, type: 'SKILL', val: 0, desc: '🐀 적에게 독 5를 부여합니다.', effect: 'POISON', effectVal: 5 },
+            { id: 'h6', subject: 'HISTORY', rarity: 'COMMON', name: '흑사병', cost: 1, type: 'SKILL', val: 0, desc: '🐀 적에게 독 6을 부여합니다.', effect: 'POISON', effectVal: 6 },
             { id: 't1', subject: 'TECH', rarity: 'RARE', name: '증기 기관', cost: 2, type: 'SKILL', val: 0, desc: '🚂 손패의 카드 강화 (+1).', effect: 'UPGRADE_HAND', effectVal: 1 },
-            { id: 't2', subject: 'TECH', rarity: 'COMMON', name: '메이커실', cost: 1, type: 'DEFENSE', val: 6, desc: '🔨 방어도 6. 덱 맨 위 카드 강화 (전투 중).', effect: 'UPGRADE_DECK_TOP' },
-            { id: 't3', subject: 'TECH', rarity: 'RARE', name: '아치 구조', cost: 1, type: 'DEFENSE', val: 15, desc: '🌉 방어도 15를 얻습니다.' },
+            { id: 't2', subject: 'TECH', rarity: 'COMMON', name: '메이커실', cost: 1, type: 'DEFENSE', val: 8, desc: '🔨 방어도 8. 덱 맨 위 카드 강화 (전투 중).', effect: 'UPGRADE_DECK_TOP' },
+            { id: 't3', subject: 'TECH', rarity: 'RARE', name: '아치 구조', cost: 1, type: 'DEFENSE', val: 17, desc: '🌉 방어도 17를 얻습니다.' },
             { id: 't4', subject: 'TECH', rarity: 'LEGEND', name: '정수리 찍기', cost: 3, type: 'ATTACK', val: 40, desc: '🔨 40 피해를 주고 적을 기절시킵니다.', effect: 'STUN_ATTACK' },
-            { id: 't5', subject: 'TECH', rarity: 'SPECIAL', name: '페니실린 발견', cost: 2, type: 'SKILL', val: 0, desc: '💊 이번 턴 동안 받는 피해 0 (소멸).', effect: 'IMMUNE_ONCE', exhaust: true },
+            { id: 't5', subject: 'TECH', rarity: 'SPECIAL', name: '페니실린 발견', cost: 2, type: 'SKILL', val: 0, desc: '💊 적의 공격에 한 턴 면역이 됩니다. (소멸).', effect: 'DODGE', exhaust: true },
             { id: 't6', subject: 'TECH', rarity: 'COMMON', name: '나노 로봇', cost: 1, type: 'ATTACK', val: 6, desc: '🤖 6 피해. 덱 맨 위 카드 강화.', effect: 'ATTACK_UPGRADE_DECK' },
             { id: 'mu1', subject: 'MUSIC', rarity: 'COMMON', name: '단소 휘두르기', cost: 1, type: 'ATTACK', val: 6, desc: '🎋 6 피해. 20% 확률로 기절.', effect: 'CHANCE_STUN', effectVal: 20 },
             { id: 'mu2', subject: 'MUSIC', rarity: 'SPECIAL', name: '비발디 사계', cost: 2, type: 'SKILL', val: 0, desc: '🎻 체력을 10 회복합니다. (소멸)', effect: 'HEAL', effectVal: 10, exhaust: true },
@@ -346,8 +346,8 @@
             { id: 'mu4', subject: 'MUSIC', rarity: 'LEGEND', name: '가창 수행', cost: 3, type: 'SKILL', val: 20, desc: '🎤 적 전체를 기절시키고 20 피해를 줍니다.', effect: 'AOE_STUN_ATTACK', effectVal: 15 },
             { id: 'mu5', subject: 'MUSIC', rarity: 'RARE', name: '클래식 감상', cost: 2, type: 'SKILL', val: 0, desc: '🎼 체력 5 회복, 카드 2장 드로우.', effect: 'HEAL_DRAW', effectVal: 5, drawVal: 2 },
             { id: 'mu6', subject: 'MUSIC', rarity: 'SPECIAL', name: '휘모리 장단', cost: 1, type: 'SKILL', val: 0, desc: '🥁 적에게 취약 1 부여, 카드 1장 드로우.', effect: 'VULNERABLE_DRAW', effectVal: 1 },
-            { id: 'a1', subject: 'ART', rarity: 'COMMON', name: '초상화', cost: 1, type: 'DEFENSE', val: 8, desc: '🖼️ 방어도 8을 얻습니다.' },
-            { id: 'a2', subject: 'ART', rarity: 'SPECIAL', name: '풍경화', cost: 3, type: 'SKILL', val: 0, desc: '🏞️ 이번 턴 동안 받는 피해가 0이 됩니다 (1회).', effect: 'IMMUNE_ONCE' },
+            { id: 'a1', subject: 'ART', rarity: 'COMMON', name: '초상화', cost: 1, type: 'DEFENSE', val: 9, desc: '🖼️ 방어도 9를 얻습니다.' },
+            { id: 'a2', subject: 'ART', rarity: 'SPECIAL', name: '풍경화', cost: 3, type: 'SKILL', val: 0, desc: '🏞️ 적의 공격을 한 턴 회피합니다.', effect: 'DODGE' },
             { id: 'a3', subject: 'ART', rarity: 'RARE', name: '조소', cost: 2, type: 'ATTACK', val: 10, desc: '🗿 10 피해. 방어도 10 획득.', effect: 'ATTACK_BLOCK' },
             { id: 'a4', subject: 'ART', rarity: 'LEGEND', name: '스크래치 아트', cost: 0, type: 'ATTACK', val: 0, desc: '🔮 현재 정신력을 모두 소모하여, 소모한 양 x15 피해를 줍니다.', effect: 'MANA_BURN_ATTACK' },
             { id: 'a5', subject: 'ART', rarity: 'RARE', name: '물감 보충', cost: 0, type: 'SKILL', val: 0, desc: '🎨 정신력 1 회복, 카드 1장 드로우.', effect: 'MANA_DRAW', effectVal: 1 },
@@ -360,16 +360,16 @@
             { id: 'p6', subject: 'PE', rarity: 'LEGEND', name: '3대 측정', cost: 0, type: 'SKILL', val: 0, desc: '🏋️ 정신력을 모두 소모하여 소모량의 2배만큼 힘을 얻습니다.', effect: 'MANA_BURN_STRENGTH' },
             { id: 'ho1', subject: 'HOME', rarity: 'COMMON', name: '토스트', cost: 0, type: 'SKILL', val: 0, desc: '🍞 체력을 5 회복합니다. (소멸)', effect: 'HEAL', effectVal: 5, exhaust: true },
             { id: 'ho2', subject: 'HOME', rarity: 'SPECIAL', name: '바느질', cost: 1, type: 'SKILL', val: 0, desc: '🧵 손패의 모든 카드 비용 -1 (이번 턴만).', effect: 'COST_DOWN_HAND' },
-            { id: 'ho3', subject: 'HOME', rarity: 'RARE', name: '사우어크라프트 먹이기', cost: 3, type: 'SKILL', val: 0, desc: '🥬 적을 기절시키고 독 5를 부여합니다.', effect: 'STUN_POISON', effectVal: 5 },
+            { id: 'ho3', subject: 'HOME', rarity: 'RARE', name: '사우어크라우트 먹이기', cost: 3, type: 'SKILL', val: 0, desc: '🥬 적을 기절시키고 독 5를 부여합니다.', effect: 'STUN_POISON', effectVal: 5 },
             { id: 'ho4', subject: 'HOME', rarity: 'LEGEND', name: '탄단지 섭취', cost: 3, type: 'SKILL', val: 0, desc: '🍱 체력을 완전히 회복합니다. (소멸)', effect: 'FULL_HEAL', exhaust: true },
             { id: 'ho5', subject: 'HOME', rarity: 'RARE', name: '행복한 가족', cost: 2, type: 'SKILL', val: 0, desc: '👨‍👩‍👧‍👦 체력 10 회복, 카드 1장 드로우.', effect: 'HEAL_DRAW', effectVal: 10, drawVal: 1 },
             { id: 'ho6', subject: 'HOME', rarity: 'SPECIAL', name: '업사이클링', cost: 2, type: 'DEFENSE', val: 15, desc: '♻️ 방어도 15, 카드 1장 드로우.', effect: 'BLOCK_DRAW', drawVal: 1 },
             { id: 'et1', subject: 'ETHICS', rarity: 'COMMON', name: '가치 찾기', cost: 0, type: 'SKILL', val: 0, desc: '⚖️ 정신력 1 회복.', effect: 'RECOVER_MANA', effectVal: 1 },
-            { id: 'et2', subject: 'ETHICS', rarity: 'SPECIAL', name: '봉사 활동', cost: 1, type: 'SKILL', val: 0, desc: '🧹 적의 모든 버프 제거.', effect: 'DISPEL' },
+            { id: 'et2', subject: 'ETHICS', rarity: 'SPECIAL', name: '봉사 활동', cost: 1, type: 'SKILL', val: 0, desc: '🧹 체력 8을 회복합니다.', effect: 'HEAL', effectVal: 8 },
             { id: 'et3', subject: 'ETHICS', rarity: 'SPECIAL', name: '칭찬하기', cost: 1, type: 'SKILL', val: 0, desc: '👏 힘 2 증가.', effect: 'STRENGTH', effectVal: 2 },
             { id: 'et4', subject: 'ETHICS', rarity: 'LEGEND', name: '갈등 해결', cost: 1, type: 'ATTACK', val: 10, desc: '🕊️ 10 피해. 사용 시마다 이 카드의 피해량 +4 (전투 중).', effect: 'SCALING_ON_USE', effectVal: 4 },
             { id: 'et5', subject: 'ETHICS', rarity: 'RARE', name: '도덕적 비판', cost: 2, type: 'ATTACK', val: 11, desc: '🗣️ 11 피해, 적에게 취약 1 부여.', effect: 'VULNERABLE_ATTACK', effectVal: 1 },
-            { id: 'et6', subject: 'ETHICS', rarity: 'RARE', name: '무위자연', cost: 3, type: 'SKILL', val: 0, desc: '🍃 카드 1장 드로우, 다음 적 공격 1회 무효화.', effect: 'DODGE_DRAW', drawVal: 1 },
+            { id: 'et6', subject: 'ETHICS', rarity: 'RARE', name: '무위자연', cost: 3, type: 'SKILL', val: 0, desc: '🍃 흘러가게 두어라. 카드 1장 뽑고, 적 공격 1회 무효화.', effect: 'DODGE_DRAW', drawVal: 1 },
             { id: 'soc1', subject: 'SOCIAL', rarity: 'COMMON', name: '지리 답사', cost: 1, type: 'SKILL', val: 0, desc: '🗺️ 손패의 모든 카드를 강화(+1)합니다.', effect: 'UPGRADE_HAND', effectVal: 1 },
             { id: 'soc2', subject: 'SOCIAL', rarity: 'COMMON', name: '정치 비판', cost: 1, type: 'ATTACK', val: 6, desc: '📢 6 피해. 적에게 취약 1(피해 50% 증가)을 부여합니다.', effect: 'VULNERABLE_ATTACK', effectVal: 1 },
             { id: 'soc3', subject: 'SOCIAL', rarity: 'SPECIAL', name: '문화 전파', cost: 1, type: 'SKILL', val: 0, desc: '🌊 덱의 무작위 공격 카드를 복제하여 손에 가져옵니다.', effect: 'DUPLICATE_ATTACK' },
@@ -377,11 +377,11 @@
             { id: 'soc5', subject: 'SOCIAL', rarity: 'RARE', name: '시장 독점!', cost: 2, type: 'SKILL', val: 0, desc: '📱 카드를 3장 드로우합니다.', effect: 'DRAW', effectVal: 3 },
             { id: 'soc6', subject: 'SOCIAL', rarity: 'LEGEND', name: '보이지 않는 손', cost: 2, type: 'SKILL', val: 0, desc: '🖐️ 이번 턴 동안 주는 모든 피해가 2배가 됩니다.', effect: 'DOUBLE_DMG' },
             // --- [추가] 히든 직업: 학교 관리자 카드 (OP) ---
-            { id: 'ad1', subject: 'ADMIN', rarity: 'SPECIAL', name: '교외체험학습', cost: 1, type: 'SKILL', val: 0, desc: '✈️ 이번 턴 동안 모든 피해를 받지 않습니다.', effect: 'IMMUNE_ONCE' },
-            { id: 'ad2', subject: 'ADMIN', rarity: 'SPECIAL', name: '훈화 말씀', cost: 1, type: 'SKILL', val: 0, desc: '🗣️ 적 전체를 기절시킵니다. (데미지 없음)', effect: 'AOE_STUN_ONLY' },
-            { id: 'ad3', subject: 'ADMIN', rarity: 'RARE', name: '교내 봉사', cost: 1, type: 'ATTACK', val: 22, desc: '🧹 22 피해를 주고 독 11을 부여합니다.', effect: 'POISON', effectVal: 11 },
-            { id: 'ad4', subject: 'ADMIN', rarity: 'RARE', name: '교무 회의', cost: 2, type: 'DEFENSE', val: 22, desc: '📑 방어도 22, 카드 3장 드로우.', effect: 'BLOCK_DRAW', drawVal: 3 },
-            { id: 'ad5', subject: 'ADMIN', rarity: 'LEGEND', name: '상장 수여', cost: 3, type: 'SKILL', val: 0, desc: '📜 다음 공격 카드의 피해량이 3배가 됩니다.', effect: 'NEXT_ATTACK_TRIPLE' },
+            { id: 'ad1', subject: 'ADMIN', rarity: 'SPECIAL', name: '교외체험학습', cost: 1, type: 'SKILL', val: 0, desc: '✈️ 이틀간 출석 인정! 회피 2회를 얻습니다.', effect: 'DODGE', effectVal: 2 },
+            { id: 'ad2', subject: 'ADMIN', rarity: 'SPECIAL', name: '훈화 말씀', cost: 1, type: 'SKILL', val: 0, desc: '🗣️ 짧게 하신다면서! 적 전체를 기절시킵니다.', effect: 'AOE_STUN_ONLY' },
+            { id: 'ad3', subject: 'ADMIN', rarity: 'RARE', name: '교내 봉사', cost: 1, type: 'ATTACK', val: 22, desc: '🧹 이럴수가! 22 피해를 주고 독 11을 부여합니다.', effect: 'POISON', effectVal: 11 },
+            { id: 'ad4', subject: 'ADMIN', rarity: 'RARE', name: '교무 회의', cost: 2, type: 'DEFENSE', val: 22, desc: '📑 교무실 출입 금지! 방어도 22 얻고 카드 3장 뽑습니다.', effect: 'BLOCK_DRAW', drawVal: 3 },
+            { id: 'ad5', subject: 'ADMIN', rarity: 'LEGEND', name: '상장 수여', cost: 3, type: 'SKILL', val: 0, desc: '📜 이게 나야! 다음 공격 카드의 피해량이 3배가 됩니다.', effect: 'NEXT_ATTACK_TRIPLE' },
         ];
 
         const ENEMIES = {
@@ -1087,7 +1087,8 @@
                 if (card.effect === 'NEXT_ATTACK_DOUBLE') setNextAttackMult(2);
                 if (card.effect === 'DOUBLE_DMG') { setDamageMultiplier(2); setCombatLog(prev => ["💪 이번 턴 공격력 2배!", ...prev]); }
                 if (card.effect === 'IMMUNE_ONCE') setIsImmune(true);
-                if (card.effect === 'DODGE') setDodgeStacks(prev => prev + 1);
+                // [수정] 회피 수치 적용 (기본 1, 설정값 있으면 그만큼)
+                if (card.effect === 'DODGE') setDodgeStacks(prev => prev + (card.effectVal || 1));
                 if (card.effect === 'ATTACK_BLOCK') setPlayerBlock(prev => prev + 10);
                 if (card.type === 'DEFENSE') setPlayerBlock(prev => prev + card.val);
                 if (card.effect === 'BLOCK_MULTIPLY') setPlayerBlock(prev => prev * (card.effectVal || 3));
@@ -1249,7 +1250,8 @@
 
                 if (!artifacts.some(r => r.effect === 'BLOCK_RETAIN')) setPlayerBlock(0);
                 else setPlayerBlock(currentBlock);
-
+                // 👇 [추가] 턴이 끝날 때마다 회피 스택이 1개씩 줄어듭니다
+                setDodgeStacks(prev => Math.max(0, prev - 1)); 
                 // 적 상태 업데이트 (방어도 초기화 포함)
                 setEnemies(prev => prev.map(e => {
                     let nextHp = e.hp;
@@ -1316,7 +1318,7 @@
                     setGameState('RELIC_REWARD');
                 } else {
                     const rewards = [];
-                    while(rewards.length < 3) rewards.push(getRandomCard(activeSubjects, deck, { COMMON: 60, SPECIAL: 25, RARE: 10, LEGEND: 5 }, true));
+                    while(rewards.length < 3) rewards.push(getRandomCard(activeSubjects, deck, { COMMON: 60, SPECIAL: 25, RARE: 10, LEGEND: 5 }, false));
                     setRewardCards(rewards);
                     setRewardTeacher(SUBJECTS[activeSubjects[Math.floor(Math.random() * activeSubjects.length)]]);
                     setGameState('REWARD');
@@ -1655,7 +1657,7 @@
                                                 </div>
 
                                                 {/* 손패 영역 (높이 및 간격 최적화) */}
-                                                <div className="flex justify-center -space-x-2 md:-space-x-4 pb-1 min-h-[150px] md:min-h-[200px] px-1 md:px-4 flex-1 max-w-4xl overflow-visible">
+                                                <div className="flex justify-center -space-x-12 md:-space-x-4 pb-1 min-h-[150px] md:min-h-[200px] px-1 md:px-4 flex-1 max-w-4xl overflow-visible">
                                                     {hand.map((card, i) => (
                                                         <div key={card.uid} className="transition-all hover:-translate-y-12 hover:scale-110 hover:z-50 origin-bottom duration-200" style={{zIndex: i}}>
                                                             <Card 
@@ -1911,6 +1913,7 @@
 </body>
 
 </html>
+
 
 
 
