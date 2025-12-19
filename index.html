@@ -1526,7 +1526,8 @@
                                             </div>
                                         </div>
                                         {/* [수정] 하단 패널 높이 자동 조절 및 패딩 축소 */}
-                                        <div className="absolute bottom-0 w-full h-auto bg-gradient-to-t from-black/90 via-black/70 to-transparent pt-8 pb-2 md:pt-12 md:pb-4 flex flex-col justify-end items-center z-20">
+                                        {/* [수정] 패드/모바일 크롬 탭 가림 방지: pb-24(약 96px)로 하단 공간 대폭 확보, PC는 lg:pb-10으로 적당히 */ }
+                                        <div className="absolute bottom-0 w-full h-auto bg-gradient-to-t from-black/90 via-black/70 to-transparent pt-8 pb-24 lg:pb-12 flex flex-col justify-end items-center z-20">
                                             
                                             {/* 전투 로그 위치 조정 */}
                                             <div className="absolute -top-8 w-full text-center pointer-events-none">
@@ -1792,4 +1793,5 @@
         root.render(<SchoolAscent />);
     </script>
 </body>
+
 </html>
