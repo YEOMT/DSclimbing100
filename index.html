@@ -276,7 +276,7 @@
             ETHICS: { id: 'ETHICS', name: '도덕', emoji: '⚖️', teacher: '김신영', teacherEmoji: '🧑‍⚖️', desc: '정신력 관리와 버프 해제 능력이 있습니다.' },
             SOCIAL: { id: 'SOCIAL', name: '사회', emoji: '🌐', teacher: '손혜민', teacherEmoji: '👩‍🏫', desc: '다른 교과와의 시너지 효과로 덱의 잠재력을 폭발시킵니다.' },
             // [추가] 히든 과목: 학교 관리자 (기본적으로는 숨겨짐)
-            ADMIN: { id: 'ADMIN', name: '학교 관리자', emoji: '👑', teacher: '교장과 교감', teacherEmoji: '🏫', desc: '교장과 교감의 권능을 사용합니다.' },
+            ADMIN: { id: 'ADMIN', name: '학교 관리자', emoji: '👑', teacher: '교감', teacherEmoji: '🏫', desc: '교장과 교감의 권능을 사용합니다.' },
 
         };
 
@@ -319,10 +319,10 @@
             { id: 'e1', subject: 'ENGLISH', rarity: 'COMMON', name: '지각동사', cost: 1, type: 'ATTACK', val: 6, desc: '👀 6의 피해. 카드 1장 드로우.', effect: 'DRAW', effectVal: 1 },
             { id: 'e2', subject: 'ENGLISH', rarity: 'SPECIAL', name: '원어민 회화', cost: 3, type: 'SKILL', val: 0, desc: '🗣️ 적을 1턴간 기절시킵니다.', effect: 'STUN' },
             { id: 'e3', subject: 'ENGLISH', rarity: 'RARE', name: '간접 의문문', cost: 2, type: 'DEFENSE', val: 7, desc: '❓ 방어도 7. 다음 턴 적의 공격 1회 무효화.', effect: 'DODGE' },
-            { id: 'e4', subject: 'ENGLISH', rarity: 'COMMON', name: '단어 시험', cost: 0, type: 'ATTACK', val: 7, desc: '🅰️ 7의 피해를 줍니다.', },
+            { id: 'e4', subject: 'ENGLISH', rarity: 'COMMON', name: '단어 시험', cost: 0, type: 'ATTACK', val: 7, desc: '🅰️ 7의 피해를 줍니다.' },
             { id: 'e5', subject: 'ENGLISH', rarity: 'RARE', name: '수동태', cost: 2, type: 'SKILL', val: 0, desc: '🛡️ 현재 방어도를 2배로 증가시킵니다.', effect: 'BLOCK_MULTIPLY', effectVal: 2 },
-            { id: 'e6', subject: 'ENGLISH', rarity: 'LEGEND', name: '본문 해석', cost: 1, type: 'ATTACK', val: 0, desc: '📖 방어도 수치만큼 적에게 피해를 줍니다.', effect: 'BODY_SLAM' },
-            { id: 's1', subject: 'SCIENCE', rarity: 'COMMON', name: '작용 반작용', cost: 0, type: 'ATTACK', val: 12, desc: '💥 12 피해. 내 체력 3 감소.', selfDamage: 3 },
+            { id: 'e6', subject: 'ENGLISH', rarity: 'LEGEND', name: '본문 해석', cost: 1, type: 'ATTACK', val: 0, desc: '📖 방어도를 소모해서 적에게 피해를 줍니다.', effect: 'BODY_SLAM' },
+            { id: 's1', subject: 'SCIENCE', rarity: 'COMMON', name: '작용 반작용', cost: 1, type: 'ATTACK', val: 12, desc: '💥 12 피해. 내 체력 3 감소.', selfDamage: 3 },
             { id: 's2', subject: 'SCIENCE', rarity: 'SPECIAL', name: '핵분열', cost: 2, type: 'ATTACK', val: 25, desc: '☢️ 25 피해. 내 체력 5 감소.', selfDamage: 5 },
             { id: 's3', subject: 'SCIENCE', rarity: 'RARE', name: '세포 분열', cost: 1, type: 'SKILL', val: 0, desc: '🦠 덱의 무작위 공격 카드를 복제하여 손에 가져옵니다.', effect: 'DUPLICATE_ATTACK' },
             { id: 's4', subject: 'SCIENCE', rarity: 'LEGEND', name: '빅뱅', cost: 4, type: 'ATTACK', val: 50, desc: '🌌 모든 적에게 50 피해. 내 체력 10 감소.', effect: 'AOE_ATTACK', selfDamage: 10 },
@@ -330,7 +330,7 @@
             { id: 's6', subject: 'SCIENCE', rarity: 'SPECIAL', name: '산화', cost: 2, type: 'ATTACK', val: 8, desc: '🧪 8의 피해, 적에게 취약 1 부여.', effect: 'VULNERABLE_ATTACK', effectVal: 1 },
             { id: 'h1', subject: 'HISTORY', rarity: 'COMMON', name: '독립운동', cost: 1, type: 'ATTACK', val: 5, desc: '🇰🇷 5 피해를 주고, 독(매 턴 피해) 4 부여.', effect: 'POISON', effectVal: 4 },
             { id: 'h2', subject: 'HISTORY', rarity: 'SPECIAL', name: '산업혁명', cost: 2, type: 'SKILL', val: 0, desc: '🏭 이번 전투 동안 매 턴 시작 시 방어도 5 획득.', effect: 'BUFF_BLOCK', effectVal: 5 },
-            { id: 'h3', subject: 'HISTORY', rarity: 'RARE', name: '세계 4대 문명', cost: 2, type: 'SKILL', val: 0, desc: '🌍 적 전체에게 10 피해를 주고 독 6 부여. (소멸)', effect: 'AOE_DMG_POISON', val: 10, effectVal: 6, exhaust: true },
+            { id: 'h3', subject: 'HISTORY', rarity: 'RARE', name: '세계 4대 문명', cost: 1, type: 'SKILL', val: 0, desc: '🌍 "67~" 전체에게 6 피해를 주고 독 7 부여. (소멸)', effect: 'AOE_DMG_POISON', val: 6, effectVal: 7, exhaust: true },
             { id: 'h4', subject: 'HISTORY', rarity: 'LEGEND', name: '역사의 수레바퀴', cost: 2, type: 'SKILL', val: 0, desc: '🎡 적의 독 중첩을 2배로 만듭니다.', effect: 'DOUBLE_POISON' },
             { id: 'h5', subject: 'HISTORY', rarity: 'SPECIAL', name: '직지심체요절', cost: 1, type: 'SKILL', val: 0, desc: '📜 체력을 10 회복합니다. (소멸)', effect: 'HEAL', effectVal: 10, exhaust: true },
             { id: 'h6', subject: 'HISTORY', rarity: 'COMMON', name: '흑사병', cost: 1, type: 'SKILL', val: 0, desc: '🐀 적에게 독 6을 부여합니다.', effect: 'POISON', effectVal: 6 },
@@ -367,7 +367,7 @@
             { id: 'et1', subject: 'ETHICS', rarity: 'COMMON', name: '가치 찾기', cost: 0, type: 'SKILL', val: 0, desc: '⚖️ 정신력 1 회복.', effect: 'RECOVER_MANA', effectVal: 1 },
             { id: 'et2', subject: 'ETHICS', rarity: 'SPECIAL', name: '봉사 활동', cost: 1, type: 'SKILL', val: 0, desc: '🧹 체력 8을 회복합니다.', effect: 'HEAL', effectVal: 8 },
             { id: 'et3', subject: 'ETHICS', rarity: 'SPECIAL', name: '칭찬하기', cost: 1, type: 'SKILL', val: 0, desc: '👏 힘 2 증가.', effect: 'STRENGTH', effectVal: 2 },
-            { id: 'et4', subject: 'ETHICS', rarity: 'LEGEND', name: '갈등 해결', cost: 1, type: 'ATTACK', val: 10, desc: '🕊️ 10 피해. 사용 시마다 이 카드의 피해량 +4 (전투 중).', effect: 'SCALING_ON_USE', effectVal: 4 },
+            { id: 'et4', subject: 'ETHICS', rarity: 'LEGEND', name: '갈등 해결', cost: 1, type: 'ATTACK', val: 10, desc: '🕊️ 10 피해. 사용 시마다 이 카드의 피해량 +7 (전투 중).', effect: 'SCALING_ON_USE', effectVal: 7 },
             { id: 'et5', subject: 'ETHICS', rarity: 'RARE', name: '도덕적 비판', cost: 2, type: 'ATTACK', val: 11, desc: '🗣️ 11 피해, 적에게 취약 1 부여.', effect: 'VULNERABLE_ATTACK', effectVal: 1 },
             { id: 'et6', subject: 'ETHICS', rarity: 'RARE', name: '무위자연', cost: 3, type: 'SKILL', val: 0, desc: '🍃 흘러가게 두어라. 카드 1장 뽑고, 적 공격 1회 무효화.', effect: 'DODGE_DRAW', drawVal: 1 },
             { id: 'soc1', subject: 'SOCIAL', rarity: 'COMMON', name: '지리 답사', cost: 1, type: 'SKILL', val: 0, desc: '🗺️ 손패의 모든 카드를 강화(+1)합니다.', effect: 'UPGRADE_HAND', effectVal: 1 },
@@ -389,7 +389,7 @@
                 { name: '뒤틀린 교과서', hp: 20, dmg: 5, emoji: '📘' },
                 { name: '융합된 담라 캔디', hp: 30, dmg: 5, emoji: '🍬' },
                 { name: '끔찍한 변기', hp: 35, dmg: 6, emoji: '🚽' },
-                { name: '썩은 사우어크라프트', hp: 25, dmg: 8, emoji: '🥬' },
+                { name: '썩은 사우어크라우트', hp: 25, dmg: 8, emoji: '🥬' },
                 { name: '분필가루의 악마', hp: 22, dmg: 5, emoji: '🌫️' },
                 { name: '고장난 스피커', hp: 35, dmg: 4, emoji: '📢' },
                 { name: '조작된 시험지', hp: 30, dmg: 7, emoji: '💯' },
@@ -411,7 +411,7 @@
             { id: 'ne1', title: "반 대항 축구 대회", desc: "체육대회 예선전이다! 우리 반의 승리를 위해...", choices: [{ txt: "참가한다", res: "GOOD", reward: { type: 'MAX_MANA', val: 1 }, msg: "우승했다! 최대 정신력 +1" }, { txt: "응원한다", res: "GOOD", reward: { type: 'HEAL', val: 15 }, msg: "목이 쉬었다. 체력 +15" }] },
             { id: 'ne2', title: "모르는 문제", desc: "수학 문제가 너무 어렵다. 누구에게 물어볼까?", choices: [{ txt: "최영광", res: "GOOD", reward: { type: 'UPGRADE_RANDOM', cost: 0 }, msg: "친절하게 알려줬다. 카드 1장 강화" }, { txt: "강성현", res: "BAD", reward: { type: 'START_MANA_DEBUFF', val: 1 }, msg: "오히려 더 헷갈리게 만들었다. 다음 전투 정신력 -1" }, { txt: "전혜성", res: "GOOD", reward: { type: 'GOLD', val: 200 }, msg: "알려주는 대신 매점 빵을 요구했다. 200원 획득(??)" }] },
             { id: 'ne3', title: "지호지호의 기묘한 모험", desc: "복도에서 지호가 기묘한 포즈를 취하고 있다.", choices: [{ txt: "같이 포즈를 취한다", res: "GOOD", reward: { type: 'HEAL', val: 20 }, msg: "기묘한 에너지가 솟아난다! 체력 +20" }, { txt: "무시한다", res: "BAD", reward: { type: 'HP_LOSS', val: 2 }, msg: "부끄러움은 나의 몫... 체력 -2" }] },
-            { id: 'ne4', title: "자전거의 양민기", desc: "양민기가 복도에서 자전거를 타고 돌진해온다!", choices: [{ txt: "피한다", res: "GOOD", reward: { type: 'GOLD', val: 100 }, msg: "피하면서 동전을 주웠다. 100원 획득" }, { txt: "막아선다", res: "BAD", reward: { type: 'HP_LOSS', val: 10 }, msg: "치였다... 체력 -10" }] },
+            { id: 'ne4', title: "무면허 라이더", desc: "누군가 복도에서 자전거를 타고 돌진해온다!", choices: [{ txt: "피한다", res: "GOOD", reward: { type: 'GOLD', val: 100 }, msg: "피하면서 동전을 주웠다. 100원 획득" }, { txt: "막아선다", res: "BAD", reward: { type: 'HP_LOSS', val: 10 }, msg: "치였다... 체력 -10" }] },
             { id: 'ne5', title: "소음 트리오", desc: "최준서, 최윤후, 최성민이 교실에서 EDM을 틀고 춤추고 있다.", choices: [{ txt: "같이 춤춘다", res: "GOOD", reward: { type: 'UPGRADE_RANDOM', cost: 0 }, msg: "스트레스 해소! 카드 1장 강화" }, { txt: "조용히 하라고 한다", res: "BAD", reward: { type: 'START_MANA_DEBUFF', val: 2 }, msg: "무시당했다. 스트레스... 다음 전투 정신력 -2" }] },
             { id: 'ne6', title: "이다온의 배구 레슨", desc: "이다온이 스파이크 시범을 보이고 있다.", choices: [{ txt: "배운다", res: "GOOD", reward: { type: 'PERM_STRENGTH', val: 1 }, msg: "손맛을 알았다! 영구적으로 힘 +1" }, { txt: "구경한다", res: "GOOD", reward: { type: 'HEAL', val: 10 }, msg: "보는 것만으로도 운동이 된다. 체력 +10" }] },
             { id: 'ne7', title: "지연우 선생님의 호출", desc: "역사 선생님이 부르신다. 내가 뭘 잘못했나?", choices: [{ txt: "간다", res: "GOOD", reward: { type: 'GOLD', val: 500 }, msg: "심부름 값이었다. 500원 획득!" }, { txt: "도망간다", res: "BAD", reward: { type: 'HP_LOSS', val: 5 }, msg: "넘어졌다. 체력 -5" }] },
@@ -440,11 +440,11 @@
             { id: 'ne30', title: "정현우와 수영장에", desc: "정현우가 수영을 가르쳐준다고 한다. 갈까?", choices: [{ txt: "배운다", res: "GOOD", reward: { type: 'MAX_HP', val: 5 }, msg: "어푸어푸. 폐활량이 늘었다! 최대 체력 +5" }, { txt: "안 간다", res: "GOOD", reward: { type: 'HEAL', val: 5 }, msg: "집에서 쉬었다. 체력 +5" }] },
             { id: 'ne31', title: "갑자기 등장한 천도영", desc: "천도영이 기괴한 중국 노래를 부르며 나타났다.", choices: [{ txt: "같이 부른다", res: "GOOD", reward: { type: 'MAX_MANA', val: 1 }, msg: "정신 세계가 확장되었다... 최대 정신력 +1" }, { txt: "도망간다", res: "BAD", reward: { type: 'START_MANA_DEBUFF', val: 1 }, msg: "귀가 아프다. 다음 전투 정신력 -1" }] },
             { id: 'ne32', title: "농구 한판?", desc: "나유민이 점심 먹기 전에 농구 한 판 하자고 한다.", choices: [{ txt: "한다", res: "GOOD", reward: { type: 'MAX_HP', val: 5 }, msg: "땀을 흘리니 상쾌하다. 최대 체력 +5" }, { txt: "밥 먹으러 간다", res: "GOOD", reward: { type: 'HEAL', val: 10 }, msg: "밥이 보약이다. 체력 +10" }] },
-            { id: 'ne33', title: "알 수 없는 눈빛", desc: "황정민이 가만히 나를 바라보고 있다....뭐지?", choices: [{ txt: "눈싸움 한다", res: "GOOD", reward: { type: 'MAX_MANA', val: 1 }, msg: "기싸움에서 이겼다! 최대 정신력 +1" }, { txt: "무시한다", res: "GOOD", reward: { type: 'HEAL', val: 0 }, msg: "아무 일도 일어나지 않았다." }] },
+            { id: 'ne33', title: "알 수 없는 눈빛", desc: "황정윤이 가만히 나를 바라보고 있다....뭐지?", choices: [{ txt: "눈싸움 한다", res: "GOOD", reward: { type: 'MAX_MANA', val: 1 }, msg: "기싸움에서 이겼다! 최대 정신력 +1" }, { txt: "무시한다", res: "GOOD", reward: { type: 'HEAL', val: 0 }, msg: "아무 일도 일어나지 않았다." }] },
             { id: 'ne34', title: "보건실 상담", desc: "보건실에 갔더니 선생님이 비타민을 주신다. 비타민을 먹을까, 상담을 할까?", choices: [{ txt: "비타민 섭취", res: "GOOD", reward: { type: 'MAX_HP', val: 5 }, msg: "건강해진 기분! 최대 체력 +5" }, { txt: "고민 상담", res: "GOOD", reward: { type: 'MAX_MANA', val: 1 }, msg: "마음이 편안해졌다. 최대 정신력 +1" }] },
-            { id: 'ne35', title: "장기 자랑", desc: "전교생 앞에서 노래를 하게 되었다....", choices: [{ txt: "자신있게 부른다", res: "GOOD", reward: { type: 'MAX_MANA', val: 2 }, msg: "엄청난 환호! 자신감 폭발! 최대 정신력 +2" }, { txt: "도망친다", res: "BAD", reward: { type: 'HP_LOSS', val: 5 }, msg: "쪽팔림에 이불킥... 체력 -5" }] },
+            { id: 'ne35', title: "장기 자랑", desc: "전교생 앞에서 노래를 하게 되었다....", choices: [{ txt: "자신있게 부른다", res: "GOOD", reward: { type: 'MAX_MANA', val: 1 }, msg: "엄청난 환호! 자신감 폭발! 최대 정신력 +1" }, { txt: "도망친다", res: "BAD", reward: { type: 'HP_LOSS', val: 5 }, msg: "쪽팔림에 이불킥... 체력 -5" }] },
             { id: 'ne36', title: "박지우와 낚시 데이트", desc: "박지우가 같이 낚시를 하러 가자는데?", choices: [{ txt: "간다", res: "GOOD", reward: { type: 'MAX_MANA', val: 1 }, msg: "세월을 낚으며 인내심을 길렀다. 최대 정신력 +1" }, { txt: "거절한다", res: "GOOD", reward: { type: 'HEAL', val: 0 }, msg: "집이 최고다." }] },
-            { id: 'ne37', title: "안형진 선생님 팬 클럽", desc: "안형진 선생님이 지나가신다! 인사를 할까 큰절을 할까?", choices: [{ txt: "큰절을 올린다", res: "GOOD", reward: { type: 'MAX_HP', val: 3 }, msg: "선생님이 껄껄 웃으며 사탕을 주셨다. 최대 체력 +3" }, { txt: "그냥 인사한다", res: "GOOD", reward: { type: 'HEAL', val: 5 }, msg: "반갑게 받아주셨다. 체력 +5" }] },
+            { id: 'ne37', title: "안형진 선생님 팬 클럽", desc: "안형진 선생님이 지나가신다! 인사를 할까 큰절을 할까?", choices: [{ txt: "큰절을 올린다", res: "GOOD", reward: { type: 'MAX_HP', val: 10 }, msg: "선생님이 껄껄 웃으며 사탕을 주셨다. 최대 체력 +10" }, { txt: "그냥 인사한다", res: "GOOD", reward: { type: 'HEAL', val: 5 }, msg: "반갑게 받아주셨다. 체력 +5" }] },
             { id: 'ne38', title: "서윤우와 주짓수 대결", desc: "서윤우가 주짓수 기술을 사용해 보고 싶다는데?", choices: [{ txt: "대련해준다", res: "TRADE", reward: { type: 'TRADE_HP_MAXHP', cost: 10, val: 10 }, msg: "온몸이 쑤시지만 맷집이 늘었다. (체력 -10, 최대 체력 +10)" }, { txt: "도망간다", res: "GOOD", reward: { type: 'HEAL', val: 0 }, msg: "살았다." }] },
             { id: 'ne39', title: "시험 출제 기간", desc: "교무실에 들어가고 싶은데 시험 기간이라 못 들어간다고 적혀 있다.", choices: [{ txt: "몰래 들어간다", res: "GOOD", reward: { type: 'UPGRADE_RANDOM', cost: 0 }, msg: "시험 정보를 엿봤다! (카드 1장 강화)" }, { txt: "돌아간다", res: "GOOD", reward: { type: 'HEAL', val: 0 }, msg: "양심을 지켰다." }] },
             { id: 'ne40', title: "신준희의 교무실 투어", desc: "신준희가 교무실을 한번 구경하러 가자고 한다. 내가 왜?", choices: [{ txt: "따라간다", res: "GOOD", reward: { type: 'MAX_MANA', val: 1 }, msg: "선생님들의 간식을 얻어먹었다. 최대 정신력 +1" }, { txt: "거절한다", res: "GOOD", reward: { type: 'HEAL', val: 5 }, msg: "피곤하다. 쉬자." }] },
@@ -527,9 +527,10 @@
                 <div 
                     onClick={() => onClick && onClick(card)}
                     /* [수정] 모바일 카드 크기 확대: w-20 -> w-28, h-28 -> h-40 */
-                    className={`relative w-28 h-40 md:w-36 md:h-52 rounded-lg border-2 flex flex-col p-1 md:p-2 cursor-pointer transition-transform hover:scale-110 shadow-md select-none bg-white
+                    className={`relative w-28 h-40 md:w-36 md:h-52 rounded-lg border-2 flex flex-col p-1 md:p-2 cursor-pointer transition-transform hover:scale-110 shadow-md select-none 
+                    bg-white/90 backdrop-blur-sm hover:bg-white hover:z-50 hover:shadow-2xl
                     ${RARITY[card.rarity].color} 
-                    ${isSelected ? 'ring-4 ring-red-500 -translate-y-4' : ''}
+                    ${isSelected ? 'ring-4 ring-red-500 -translate-y-4 z-50 bg-white' : ''} 
                     ${card.exhaust ? 'card-exhaust' : ''}
                     `}
                 >
@@ -1076,7 +1077,11 @@
                 if (card.selfDamage) { setHp(prev => Math.max(0, prev - card.selfDamage)); triggerShake('player'); }
                 
                 if (card.effect === 'MANA_BURN_ATTACK') { setMental(0); setCombatLog(prev => [`🔥 정신력 폭발! ${finalDmg} 피해!`, ...prev]); } 
-                
+                // [수정] 본문 해석: 공격 후 방어도 모두 소모
+                if (card.effect === 'BODY_SLAM') {
+                    setPlayerBlock(0); 
+                    setCombatLog(prev => ["🛡️ 방어도를 모두 소모하여 공격에 실었습니다!", ...prev]);
+                }
                 if (card.effect === 'BUFF_BLOCK') { setPersistentBlockBonus(prev => prev + card.effectVal); setCombatLog(prev => [`🛡️ 매 턴 방어도 +${card.effectVal} 증가!`, ...prev]); }
                 if (card.effect === 'STRENGTH' || card.effect === 'STRENGTH_ATTACK') setPlayerStrength(prev => prev + (card.effectVal || 2));
                 if (card.effect === 'HEAL') { setHp(prev => Math.min(maxHp, prev + card.effectVal)); playRetroSound('heal'); }
@@ -1665,9 +1670,24 @@
                                                                 isSelected={selectedCard?.uid === card.uid} 
                                                                 gameStats={gameStats}
                                                                 onClick={(c) => {
+                                                                    // 1. 타겟 필요 여부 체크
                                                                     const needsTarget = (c.type === 'ATTACK' || ['STUN', 'POISON', 'WEAK', 'DISPEL', 'VULNERABLE'].some(e => c.effect?.includes(e))) && !['AOE_ATTACK', 'AOE_STUN_ATTACK', 'AOE_DMG_POISON'].includes(c.effect);
-                                                                    if (!needsTarget) playCard(c, null);
-                                                                    else setSelectedCard(selectedCard?.uid === c.uid ? null : c);
+                                                                    
+                                                                    // 2. 이미 선택된 카드를 '또' 눌렀을 때 (더블 탭)
+                                                                    if (selectedCard?.uid === c.uid) {
+                                                                        if (needsTarget) {
+                                                                            // 공격 카드는 또 누르면 선택 취소 (타겟을 찍어야 하니까)
+                                                                            setSelectedCard(null);
+                                                                        } else {
+                                                                            // 방어/버프 카드는 또 누르면 '발동'
+                                                                            playCard(c, null);
+                                                                        }
+                                                                    } 
+                                                                    // 3. 처음 눌렀을 때 (일단 위로 띄우기만 함)
+                                                                    else {
+                                                                        playRetroSound('click');
+                                                                        setSelectedCard(c); 
+                                                                    }
                                                                 }}
                                                             />
                                                         </div>
@@ -1863,41 +1883,62 @@
                                 )}
 
                                 {(gameState === 'GAME_OVER' || gameState === 'VICTORY') && (
-                                    <div className="absolute inset-0 bg-black/95 flex flex-col items-center justify-center z-50">
-                                        <h1 className={`text-6xl font-black mb-4 ${gameState==='VICTORY'?'text-green-500':'text-red-500'}`}>{gameState === 'VICTORY' ? '🏆 전설적인 졸업생' : '💀 유급되었습니다...'}</h1>
-                                        {gameState === 'VICTORY' && <div className="text-4xl mb-4">🎓 졸업을 축하합니다! 🎓</div>}
-                                        {gameState === 'GAME_OVER' && <div className="text-2xl mb-4 text-slate-300">안타깝게도 진급에 실패했습니다...</div>}
-                                        <p className="text-2xl text-white mb-8">{stage}교시까지 생존</p>
-                                        {/* [추가] 상세 성적표 표시 */}
-                                        <div className="bg-slate-800/80 p-6 rounded-xl border border-slate-600 mb-8 text-left w-full max-w-sm">
-                                            <div className="flex justify-between text-slate-300 mb-1"><span>기본 점수 ({stage}교시)</span><span>+{stage * 100}</span></div>
-                                            <div className="flex justify-between text-red-300 mb-1"><span>건강 점수 (HP {hp})</span><span>+{hp * 10}</span></div>
-                                            <div className="flex justify-between text-blue-300 mb-1"><span>멘탈 점수 (최대 {maxMental})</span><span>+{maxMental * 500}</span></div>
-                                            <div className="flex justify-between text-yellow-300 mb-1"><span>경제 점수 ({gold}원)</span><span>+{gold}</span></div>
-                                            <div className="flex justify-between text-slate-400 mb-1"><span>덱 압축 감점 ({deck.length}장)</span><span>-{deck.length * 10}</span></div>
-                                            {stage >= 100 && <div className="flex justify-between text-green-400 font-bold mb-1"><span>🎉 졸업 보너스</span><span>+10,000</span></div>}
-                                            <div className="border-t border-slate-500 my-2"></div>
-                                            <div className="flex justify-between text-2xl font-black text-white">
-                                                <span>총점</span>
-                                                <span>
-                                                    {Math.max(0, (stage * 100) + (hp * 10) + (maxMental * 500) + gold - (deck.length * 10) + (stage >= 100 ? 10000 : 0)).toLocaleString()}점
-                                                </span>
+                                    /* [수정] 엔딩 화면: 스크롤 가능(overflow-y-auto) + 화면 꽉 차게 설정 */
+                                    <div className="absolute inset-0 bg-black/95 z-50 overflow-y-auto flex flex-col items-center">
+                                        {/* min-h-full로 내용이 적어도 중앙 정렬, 많으면 스크롤됨. py-12로 위아래 여백 확보 */}
+                                        <div className="w-full max-w-4xl flex flex-col items-center justify-center min-h-full py-12 px-4">
+                                            
+                                            {/* 1. 제목 및 메시지 */}
+                                            <h1 className={`text-4xl md:text-6xl font-black mb-4 text-center break-keep ${gameState==='VICTORY'?'text-green-500':'text-red-500'}`}>
+                                                {gameState === 'VICTORY' ? '🏆 전설적인 졸업생' : '💀 유급되었습니다...'}
+                                            </h1>
+                                            {gameState === 'VICTORY' && <div className="text-2xl md:text-4xl mb-4 text-center">🎓 졸업을 축하합니다! 🎓</div>}
+                                            {gameState === 'GAME_OVER' && <div className="text-xl md:text-2xl mb-4 text-slate-300 text-center">안타깝게도 진급에 실패했습니다...</div>}
+                                            <p className="text-xl md:text-2xl text-white mb-8">{stage}교시까지 생존</p>
+                                            
+                                            {/* 2. 상세 성적표 (모바일 폭 맞춤) */}
+                                            <div className="bg-slate-800/80 p-6 rounded-xl border border-slate-600 mb-8 text-left w-full max-w-sm shadow-xl">
+                                                <div className="flex justify-between text-slate-300 mb-2"><span>기본 점수 ({stage}교시)</span><span>+{stage * 100}</span></div>
+                                                <div className="flex justify-between text-red-300 mb-2"><span>건강 점수 (HP {hp})</span><span>+{hp * 10}</span></div>
+                                                <div className="flex justify-between text-blue-300 mb-2"><span>멘탈 점수 (최대 {maxMental})</span><span>+{maxMental * 500}</span></div>
+                                                <div className="flex justify-between text-yellow-300 mb-2"><span>경제 점수 ({gold}원)</span><span>+{gold}</span></div>
+                                                {/* 덱 압축 감점 -10점으로 표시 */}
+                                                <div className="flex justify-between text-slate-400 mb-2"><span>덱 압축 감점 ({deck.length}장)</span><span>-{deck.length * 10}</span></div>
+                                                {stage >= 100 && <div className="flex justify-between text-green-400 font-bold mb-2"><span>🎉 졸업 보너스</span><span>+10,000</span></div>}
+                                                
+                                                <div className="border-t border-slate-500 my-4"></div>
+                                                
+                                                <div className="flex justify-between text-xl md:text-2xl font-black text-white">
+                                                    <span>총점</span>
+                                                    <span>
+                                                        {Math.max(0, (stage * 100) + (hp * 10) + (maxMental * 500) + gold - (deck.length * 10) + (stage >= 100 ? 10000 : 0)).toLocaleString()}점
+                                                    </span>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="flex flex-col gap-4 mb-8 w-full max-w-sm">
-                                            <input 
-                                                type="text" 
-                                                placeholder="이름을 입력하세요" 
-                                                className="px-4 py-2 rounded text-black text-center font-bold"
-                                                value={playerName}
-                                                onChange={(e) => setPlayerName(e.target.value)}
-                                                maxLength={10}
-                                            />
-                                            <button onClick={saveScore} className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-3 px-6 rounded-lg">기록 저장하기</button>
-                                            <button onClick={copyScore} className="bg-slate-600 hover:bg-slate-500 text-white font-bold py-3 px-6 rounded-lg">성적표 복사하기 (공유)</button>
-                                        </div>
 
-                                        <button onClick={() => setGameState('MENU')} className="text-white underline hover:text-slate-300">처음으로 돌아가기</button>
+                                            {/* 3. 입력 및 버튼 (터치하기 쉽게 큼직하게) */}
+                                            <div className="flex flex-col gap-4 mb-12 w-full max-w-sm">
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="이름을 입력하세요" 
+                                                    className="px-4 py-3 rounded-xl text-black text-center font-bold text-lg shadow-inner focus:outline-none focus:ring-4 focus:ring-yellow-400"
+                                                    value={playerName}
+                                                    onChange={(e) => setPlayerName(e.target.value)}
+                                                    maxLength={10}
+                                                />
+                                                <button onClick={saveScore} className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-4 px-6 rounded-xl shadow-lg transform active:scale-95 transition-transform text-lg">
+                                                    기록 저장하기
+                                                </button>
+                                                <button onClick={copyScore} className="bg-slate-600 hover:bg-slate-500 text-white font-bold py-4 px-6 rounded-xl shadow-lg transform active:scale-95 transition-transform text-lg">
+                                                    성적표 복사하기 (공유)
+                                                </button>
+                                            </div>
+
+                                            {/* 4. 하단 돌아가기 버튼 (여백 확보) */}
+                                            <button onClick={() => setGameState('MENU')} className="text-white underline hover:text-slate-300 text-sm md:text-base pb-8">
+                                                처음으로 돌아가기
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -1913,6 +1954,7 @@
 </body>
 
 </html>
+
 
 
 
